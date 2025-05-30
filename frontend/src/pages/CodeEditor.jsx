@@ -85,11 +85,19 @@ const CodeEditor = () => {
     const handleCodeChange = (value) => {
         setCode(value);
         const roomRef = ref(database, `rooms/${roomId}`);
-        set(roomRef, {
-            code: value,
-            language,
-            lastUpdated: Date.now(),
-        });
+        
+        // First read the current room data
+        onValue(roomRef, (snapshot) => {
+            const currentData = snapshot.val() || {};
+            
+            // Then update only the code and timestamp while preserving other fields
+            set(roomRef, {
+                ...currentData,
+                code: value,
+                language,
+                lastUpdated: Date.now(),
+            });
+        }, { onlyOnce: true });
     };
 
     const executeCode = async () => {
