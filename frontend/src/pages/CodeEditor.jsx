@@ -35,6 +35,9 @@ const CodeEditor = () => {
     const [isExecuting, setIsExecuting] = useState(false);
     const [collaborators, setCollaborators] = useState([]);
     const [codeBlame, setCodeBlame] = useState({});
+    
+    // Update your state to track line-by-line blame data
+    const [lineBlameData, setLineBlameData] = useState({});
 
     useEffect(() => {
         const roomRef = ref(database, `rooms/${roomId}`);
@@ -85,6 +88,7 @@ const CodeEditor = () => {
         };
     }, [roomId]);
 
+    // Modify handleCodeChange to track changes by line
     const handleCodeChange = (value) => {
         setCode(value);
         const roomRef = ref(database, `rooms/${roomId}`);
@@ -92,19 +96,31 @@ const CodeEditor = () => {
         // First read the current room data
         onValue(roomRef, (snapshot) => {
             const currentData = snapshot.val() || {};
-            
-            // Save code with author information
             const now = Date.now();
-            const codeChange = {
-                userId: auth.currentUser.uid,
-                userName: auth.currentUser.displayName || "Anonymous",
-                userPhoto: auth.currentUser.photoURL || 
-                    "https://api.dicebear.com/7.x/avatars/svg?seed=" + auth.currentUser.uid,
-                timestamp: now,
-                code: value
-            };
             
-            // Track code changes by storing the last editor
+            // Get old code lines and new code lines
+            const oldCode = currentData.code || "";
+            const oldLines = oldCode.split('\n');
+            const newLines = value.split('\n');
+            
+            // Create or update the lineBlame object
+            const lineBlame = { ...(currentData.lineBlame || {}) };
+            
+            // Track changed lines by comparing old and new code
+            for (let i = 0; i < newLines.length; i++) {
+                // If line is new or changed, update blame data
+                if (i >= oldLines.length || newLines[i] !== oldLines[i]) {
+                    lineBlame[i] = {
+                        userId: auth.currentUser.uid,
+                        userName: auth.currentUser.displayName || "Anonymous",
+                        userPhoto: auth.currentUser.photoURL ||
+                            "https://api.dicebear.com/7.x/avatars/svg?seed=" + auth.currentUser.uid,
+                        timestamp: now
+                    };
+                }
+            }
+            
+            // Keep track of last editor for the whole file
             const blameData = { ...(currentData.codeBlame || {}) };
             blameData.lastEditor = {
                 userId: auth.currentUser.uid,
@@ -114,14 +130,14 @@ const CodeEditor = () => {
                 timestamp: now
             };
             
-            // Then update only the code and timestamp while preserving other fields
+            // Then update data preserving other fields
             set(roomRef, {
                 ...currentData,
                 code: value,
                 language,
                 lastUpdated: now,
                 codeBlame: blameData,
-                lastCodeChange: codeChange
+                lineBlame: lineBlame // Save line-by-line blame data
             });
         }, { onlyOnce: true });
     };
@@ -201,6 +217,52 @@ const CodeEditor = () => {
         };
     });
     
+    // Create a new tooltip extension for line-by-line blame
+    const lineBlameTooltipExtension = hoverTooltip((view, pos) => {
+        // Get the line number at cursor position
+        const line = view.state.doc.lineAt(pos);
+        const lineIndex = line.number - 1; // Convert to 0-indexed
+        
+        // Check if we have blame data for this line
+        if (!lineBlameData[lineIndex]) return null;
+        
+        const lineInfo = lineBlameData[lineIndex];
+        
+        return {
+            pos: line.from,
+            end: line.to,
+            above: true,
+            create() {
+                const dom = document.createElement("div");
+                
+                // Apply styling
+                dom.style.backgroundColor = "#1e293b";
+                dom.style.color = "white";
+                dom.style.padding = "8px 12px";
+                dom.style.borderRadius = "6px";
+                dom.style.boxShadow = "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)";
+                dom.style.display = "flex";
+                dom.style.alignItems = "center";
+                dom.style.gap = "10px";
+                dom.style.zIndex = "9999";
+                dom.style.fontFamily = "system-ui, -apple-system, sans-serif";
+                dom.style.fontSize = "14px";
+                
+                dom.innerHTML = `
+                    <img src="${lineInfo.userPhoto}" alt="${lineInfo.userName}" 
+                        style="width: 24px; height: 24px; border-radius: 50%;" />
+                    <div>
+                        <div style="font-weight: 500;">${lineInfo.userName}</div>
+                        <div style="font-size: 11px; color: #cbd5e0;">
+                            Line ${lineIndex + 1} • Edited ${new Date(lineInfo.timestamp).toLocaleString()}
+                        </div>
+                    </div>
+                `;
+                return { dom };
+            }
+        };
+    });
+
     // Update effect to fetch blame data
     useEffect(() => {
         const roomRef = ref(database, `rooms/${roomId}`);
@@ -240,10 +302,20 @@ const CodeEditor = () => {
             }
         });
         
+        // Add listener for line blame data
+        const lineBlameRef = ref(database, `rooms/${roomId}/lineBlame`);
+        const lineBlameUnsubscribe = onValue(lineBlameRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                setLineBlameData(data);
+            }
+        });
+        
         return () => {
             unsubscribe();
             roomDetailsUnsubscribe();
             blameUnsubscribe();
+            lineBlameUnsubscribe();
         };
     }, [roomId]);
 
@@ -316,7 +388,8 @@ const CodeEditor = () => {
                             theme="dark"
                             extensions={[
                                 languageExtensions[language](),
-                                blameTooltipExtension
+                                blameTooltipExtension,
+                                lineBlameTooltipExtension // Use the line-by-line tooltip
                             ]}
                             onChange={handleCodeChange}
                         />
