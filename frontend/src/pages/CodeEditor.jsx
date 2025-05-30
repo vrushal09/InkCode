@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { auth, database } from "../config/firebase";
-import { ref, onValue, set } from "firebase/database";
+import { ref, onValue, set, push, remove } from "firebase/database";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { python } from "@codemirror/lang-python";
@@ -9,8 +9,8 @@ import { java } from "@codemirror/lang-java";
 import { cpp } from "@codemirror/lang-cpp";
 import { toast } from "react-toastify";
 import { JDOODLE_CONFIG } from "../config/jdoodle";
-// import { Tooltip } from "@uiw/react-tooltip";
 import { hoverTooltip } from "@codemirror/view";
+import { EditorView, gutter, GutterMarker } from "@codemirror/view";
 
 const languageExtensions = {
     javascript,
@@ -27,6 +27,37 @@ const languageIds = {
 };
 
 const CodeEditor = () => {
+    useEffect(() => {
+        // Add CSS for comment indicators
+        const style = document.createElement('style');
+        style.textContent = `
+            .cm-comments-gutter .comment-indicator {
+                opacity: 0.8;
+                transition: opacity 0.2s ease;
+            }
+            .cm-comments-gutter .comment-indicator:hover {
+                opacity: 1;
+            }
+            .comment-gutter-empty:hover::after {
+                content: '+';
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                height: 100%;
+                font-size: 16px;
+                color: rgba(59, 130, 246, 0.7);
+            }
+        `;
+        document.head.appendChild(style);
+        
+        return () => {
+            if (style.parentNode) {
+                document.head.removeChild(style);
+            }
+        };
+    }, []);
+    
     const { roomId } = useParams();
     const [code, setCode] = useState("");
     const [input, setInput] = useState("");
@@ -35,10 +66,16 @@ const CodeEditor = () => {
     const [isExecuting, setIsExecuting] = useState(false);
     const [collaborators, setCollaborators] = useState([]);
     const [codeBlame, setCodeBlame] = useState({});
-    
-    // Update your state to track line-by-line blame data
     const [lineBlameData, setLineBlameData] = useState({});
-
+    
+    // Add new state for comments
+    const [comments, setComments] = useState({});
+    const [activeComment, setActiveComment] = useState(null);
+    const [newCommentLine, setNewCommentLine] = useState(null);
+    const [newCommentText, setNewCommentText] = useState("");
+    const [newReplyText, setNewReplyText] = useState("");
+    const commentInputRef = useRef(null);
+    
     useEffect(() => {
         const roomRef = ref(database, `rooms/${roomId}`);
         const unsubscribe = onValue(roomRef, (snapshot) => {
@@ -241,7 +278,64 @@ const CodeEditor = () => {
         };
     });
 
-    // Update effect to fetch blame data
+    // A simpler gutter implementation to test
+    const commentGutter = gutter({
+        class: "cm-comments-gutter",
+        renderEmptyElements: true,
+        lineMarker(view, line) {
+            const lineInfo = view.state.doc.lineAt(line.from);
+            const lineNo = lineInfo.number - 1;
+            
+            // Create a basic marker for each line
+            const marker = new class extends GutterMarker {
+                toDOM() {
+                    const element = document.createElement("div");
+                    element.style.cursor = "pointer";
+                    element.style.width = "100%";
+                    element.style.height = "100%";
+                    
+                    const lineComments = comments[lineNo] || {};
+                    const hasComments = Object.keys(lineComments).length > 0;
+                    
+                    if (hasComments) {
+                        element.textContent = Object.keys(lineComments).length;
+                        element.style.backgroundColor = "#3b82f6";
+                        element.style.color = "white";
+                        element.style.borderRadius = "50%";
+                        element.style.display = "flex";
+                        element.style.alignItems = "center";
+                        element.style.justifyContent = "center";
+                        element.style.fontSize = "12px";
+                        element.style.margin = "2px";
+                    }
+                    
+                    element.addEventListener("click", () => {
+                        if (hasComments) {
+                            setActiveComment(lineNo);
+                        } else {
+                            handleStartComment(lineNo);
+                        }
+                    });
+                    
+                    return element;
+                }
+            };
+            
+            return marker;
+        },
+        initialSpacer() {
+            return new class extends GutterMarker {
+                toDOM() {
+                    const element = document.createElement("div");
+                    element.textContent = "+";
+                    element.style.opacity = "0";
+                    return element;
+                }
+            };
+        }
+    });
+
+    // Update effect to fetch blame data and comments
     useEffect(() => {
         const roomRef = ref(database, `rooms/${roomId}`);
         const unsubscribe = onValue(roomRef, (snapshot) => {
@@ -289,13 +383,87 @@ const CodeEditor = () => {
             }
         });
         
+        // Add listener for comments
+        const commentsRef = ref(database, `rooms/${roomId}/comments`);
+        const commentsUnsubscribe = onValue(commentsRef, (snapshot) => {
+            const data = snapshot.val() || {};
+            setComments(data);
+        });
+        
         return () => {
             unsubscribe();
             roomDetailsUnsubscribe();
             blameUnsubscribe();
             lineBlameUnsubscribe();
+            commentsUnsubscribe();
         };
     }, [roomId]);
+
+    // Function to start a new comment
+    const handleStartComment = (lineIndex) => {
+        setNewCommentLine(lineIndex);
+        setActiveComment(null);
+        setNewCommentText("");
+        
+        // Focus the input after rendering
+        setTimeout(() => {
+            if (commentInputRef.current) {
+                commentInputRef.current.focus();
+            }
+        }, 10);
+    };
+    
+    // Function to add a comment to a specific line
+    const handleAddComment = () => {
+        if (!newCommentText.trim() || newCommentLine === null) return;
+        
+        const commentsRef = ref(database, `rooms/${roomId}/comments/${newCommentLine}`);
+        const newCommentRef = push(commentsRef);
+        
+        set(newCommentRef, {
+            text: newCommentText.trim(),
+            userId: auth.currentUser.uid,
+            userName: auth.currentUser.displayName || "Anonymous",
+            userPhoto: auth.currentUser.photoURL || 
+                "https://api.dicebear.com/7.x/avatars/svg?seed=" + auth.currentUser.uid,
+            timestamp: Date.now(),
+            replies: {}
+        });
+        
+        setNewCommentLine(null);
+        setNewCommentText("");
+    };
+    
+    // Function to add a reply to a comment
+    const handleAddReply = (lineIndex, commentId) => {
+        if (!newReplyText.trim()) return;
+        
+        const replyRef = ref(database, `rooms/${roomId}/comments/${lineIndex}/${commentId}/replies`);
+        const newReplyRef = push(replyRef);
+        
+        set(newReplyRef, {
+            text: newReplyText.trim(),
+            userId: auth.currentUser.uid,
+            userName: auth.currentUser.displayName || "Anonymous",
+            userPhoto: auth.currentUser.photoURL || 
+                "https://api.dicebear.com/7.x/avatars/svg?seed=" + auth.currentUser.uid,
+            timestamp: Date.now()
+        });
+        
+        setNewReplyText("");
+    };
+    
+    // Function to delete a comment
+    const handleDeleteComment = (lineIndex, commentId) => {
+        const commentRef = ref(database, `rooms/${roomId}/comments/${lineIndex}/${commentId}`);
+        remove(commentRef);
+    };
+    
+    // Function to delete a reply
+    const handleDeleteReply = (lineIndex, commentId, replyId) => {
+        const replyRef = ref(database, `rooms/${roomId}/comments/${lineIndex}/${commentId}/replies/${replyId}`);
+        remove(replyRef);
+    };
 
     return (
         <div className="min-h-screen p-4 flex flex-col">
@@ -359,7 +527,7 @@ const CodeEditor = () => {
             {/* Editor */}
             <div className="flex-1 grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-4">
-                    <div className="flex-1 card overflow-hidden">
+                    <div className="flex-1 card overflow-hidden relative">
                         <CodeMirror
                             value={code}
                             height="100%"
@@ -367,10 +535,146 @@ const CodeEditor = () => {
                             extensions={[
                                 languageExtensions[language](),
                                 blameTooltipExtension,
-                                lineBlameTooltipExtension // Use the line-by-line tooltip
+                                lineBlameTooltipExtension,
+                                commentGutter
                             ]}
                             onChange={handleCodeChange}
                         />
+                        
+                        {/* New comment form */}
+                        {newCommentLine !== null && (
+                            <div 
+                                className="absolute right-4 bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-3 z-10"
+                                style={{ 
+                                    top: `${(newCommentLine + 1) * 21}px`,
+                                    transform: 'translateY(-50%)',
+                                    width: '280px'
+                                }}>
+                                <textarea
+                                    ref={commentInputRef}
+                                    className="w-full p-2 bg-gray-900 border border-gray-700 rounded resize-none text-sm focus:outline-none focus:border-blue-500"
+                                    rows="3"
+                                    value={newCommentText}
+                                    onChange={(e) => setNewCommentText(e.target.value)}
+                                    placeholder="Add a comment..."
+                                ></textarea>
+                                <div className="flex justify-end mt-2 gap-2">
+                                    <button 
+                                        className="px-3 py-1 text-xs bg-transparent text-gray-400 hover:text-white rounded"
+                                        onClick={() => setNewCommentLine(null)}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                                        onClick={handleAddComment}
+                                    >
+                                        Comment
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                        
+                        {/* Comment thread view */}
+                        {activeComment !== null && comments[activeComment] && (
+                            <div className="absolute right-0 top-0 w-80 bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-4 z-10 max-h-[80vh] overflow-y-auto"
+                                 style={{ 
+                                     top: `${(activeComment + 1) * 21}px`, // Adjust based on line height
+                                     transform: 'translateY(-50%)' 
+                                 }}>
+                                <div className="flex justify-between items-center mb-3">
+                                    <h3 className="text-sm font-medium text-white">Comments on line {activeComment + 1}</h3>
+                                    <button 
+                                        className="p-1 text-gray-400 hover:text-white rounded"
+                                        onClick={() => setActiveComment(null)}
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                                
+                                {Object.entries(comments[activeComment]).map(([commentId, comment]) => (
+                                    <div key={commentId} className="mb-4 p-3 bg-gray-900 rounded-lg">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <img src={comment.userPhoto} alt={comment.userName} className="w-6 h-6 rounded-full" />
+                                            <div>
+                                                <div className="text-sm font-medium">{comment.userName}</div>
+                                                <div className="text-xs text-gray-400">
+                                                    {new Date(comment.timestamp).toLocaleString()}
+                                                </div>
+                                            </div>
+                                            
+                                            {comment.userId === auth.currentUser.uid && (
+                                                <button 
+                                                    className="ml-auto text-xs text-gray-400 hover:text-red-500"
+                                                    onClick={() => handleDeleteComment(activeComment, commentId)}
+                                                >
+                                                    Delete
+                                                </button>
+                                            )}
+                                        </div>
+                                        
+                                        <p className="text-sm mb-3">{comment.text}</p>
+                                        
+                                        {/* Replies section */}
+                                        {comment.replies && Object.entries(comment.replies).length > 0 && (
+                                            <div className="pl-3 border-l border-gray-700 mt-3 space-y-3">
+                                                {Object.entries(comment.replies).map(([replyId, reply]) => (
+                                                    <div key={replyId} className="bg-gray-800 p-2 rounded">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <img src={reply.userPhoto} alt={reply.userName} className="w-4 h-4 rounded-full" />
+                                                            <div className="text-xs font-medium">{reply.userName}</div>
+                                                            <div className="text-xs text-gray-400">
+                                                                {new Date(reply.timestamp).toLocaleString()}
+                                                            </div>
+                                                            
+                                                            {reply.userId === auth.currentUser.uid && (
+                                                                <button 
+                                                                    className="ml-auto text-xs text-gray-400 hover:text-red-500"
+                                                                    onClick={() => handleDeleteReply(activeComment, commentId, replyId)}
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-xs">{reply.text}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        
+                                        {/* Reply input */}
+                                        <div className="mt-3 flex gap-2">
+                                            <input
+                                                type="text"
+                                                className="flex-1 p-2 text-xs bg-gray-700 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                                                placeholder="Add a reply..."
+                                                value={newReplyText}
+                                                onChange={(e) => setNewReplyText(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                                        e.preventDefault();
+                                                        handleAddReply(activeComment, commentId);
+                                                    }
+                                                }}
+                                            />
+                                            <button 
+                                                className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                                                onClick={() => handleAddReply(activeComment, commentId)}
+                                            >
+                                                Reply
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                                
+                                <button 
+                                    className="w-full py-2 text-xs bg-gray-700 hover:bg-gray-600 text-white rounded-lg mt-2"
+                                    onClick={() => handleStartComment(activeComment)}
+                                >
+                                    Add another comment
+                                </button>
+                            </div>
+                        )}
                     </div>
                     
                     <div className="h-1/3 card overflow-hidden">
