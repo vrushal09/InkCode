@@ -202,15 +202,11 @@ const CodeEditor = () => {
                 dom.style.fontFamily = "system-ui, -apple-system, sans-serif";
                 dom.style.fontSize = "14px";
                 
+                // Simplified tooltip without timestamp
                 dom.innerHTML = `
                     <img src="${lastEditor.userPhoto}" alt="${lastEditor.userName}" 
                         style="width: 24px; height: 24px; border-radius: 50%;" />
-                    <div>
-                        <div style="font-weight: 500;">${lastEditor.userName}</div>
-                        <div style="font-size: 11px; color: #cbd5e0;">
-                            Edited ${new Date(lastEditor.timestamp).toLocaleString()}
-                        </div>
-                    </div>
+                    <div style="font-weight: 500;">${lastEditor.userName}</div>
                 `;
                 return { dom };
             }
@@ -248,13 +244,14 @@ const CodeEditor = () => {
                 dom.style.fontFamily = "system-ui, -apple-system, sans-serif";
                 dom.style.fontSize = "14px";
                 
+                // Simplified tooltip with just line number and author, no timestamp
                 dom.innerHTML = `
                     <img src="${lineInfo.userPhoto}" alt="${lineInfo.userName}" 
                         style="width: 24px; height: 24px; border-radius: 50%;" />
                     <div>
                         <div style="font-weight: 500;">${lineInfo.userName}</div>
                         <div style="font-size: 11px; color: #cbd5e0;">
-                            Line ${lineIndex + 1} • Edited ${new Date(lineInfo.timestamp).toLocaleString()}
+                            Line ${lineIndex + 1}
                         </div>
                     </div>
                 `;
