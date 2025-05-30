@@ -44,10 +44,24 @@ const CodeEditor = () => {
     });
 
     // Track collaborators
-    const collaboratorsRef = ref(database, `rooms/${roomId}/collaborators`);
-    const collaboratorUnsubscribe = onValue(collaboratorsRef, (snapshot) => {
+    // Get room creator and collaborators
+    const roomDetailsRef = ref(database, `rooms/${roomId}`);
+    const roomDetailsUnsubscribe = onValue(roomDetailsRef, (snapshot) => {
       const data = snapshot.val() || {};
-      setCollaborators(Object.values(data));
+      const creatorId = data.createdBy;
+      
+      // Update collaborators with creator status
+      const collaboratorsRef = ref(database, `rooms/${roomId}/collaborators`);
+      const collaboratorUnsubscribe = onValue(collaboratorsRef, (snapshot) => {
+        const collaboratorsData = snapshot.val() || {};
+        const collaboratorsList = Object.values(collaboratorsData).map(user => ({
+          ...user,
+          isCreator: user.id === creatorId
+        }));
+        setCollaborators(collaboratorsList);
+      });
+
+      return () => collaboratorUnsubscribe();
     });
 
     // Add current user to collaborators
@@ -55,12 +69,14 @@ const CodeEditor = () => {
     set(userRef, {
       id: auth.currentUser.uid,
       name: auth.currentUser.displayName || 'Anonymous',
-      lastActive: Date.now()
+      photoURL: auth.currentUser.photoURL || 'https://api.dicebear.com/7.x/avatars/svg?seed=' + auth.currentUser.uid,
+      lastActive: Date.now(),
+      isCreator: false // Will be updated when checking creator status
     });
 
     return () => {
       unsubscribe();
-      collaboratorUnsubscribe();
+      roomDetailsUnsubscribe();
       // Remove user from collaborators when leaving
       set(userRef, null);
     };
@@ -116,15 +132,25 @@ const CodeEditor = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
-          <h2 className="text-xl font-semibold">Room: {roomId.slice(0, 8)}...</h2>
+          <h2 className="text-xl font-semibold">Room ID: {roomId}</h2>
           <div className="flex items-center gap-2">
             {collaborators.map((user) => (
               <div
                 key={user.id}
-                className="px-2 py-1 bg-secondary rounded text-sm"
-                title={`Last active: ${new Date(user.lastActive).toLocaleString()}`}
+                className="flex items-center gap-2 px-2 py-1 bg-secondary rounded-full text-sm"
+                title={`${user.name}\nLast active: ${new Date(user.lastActive).toLocaleString()}`}
               >
-                {user.name}
+                <img
+                  src={user.photoURL}
+                  alt={user.name}
+                  className="w-6 h-6 rounded-full"
+                />
+                <span>{user.name}</span>
+                {user.isCreator && (
+                  <span className="text-xs bg-primary px-1.5 py-0.5 rounded-full">
+                    Creator
+                  </span>
+                )}
               </div>
             ))}
           </div>

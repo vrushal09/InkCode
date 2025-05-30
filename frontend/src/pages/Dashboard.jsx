@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, database } from '../config/firebase';
-import { ref, push, set, onValue, query, orderByChild, limitToLast } from 'firebase/database';
+import { ref, push, set, onValue, query, orderByChild, limitToLast, get } from 'firebase/database';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'react-toastify';
 
@@ -15,11 +15,13 @@ const PROGRAMMING_LANGUAGES = [
 const Dashboard = () => {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [projects, setProjects] = useState([]);
   const [newProject, setNewProject] = useState({
     name: '',
     language: 'javascript'
   });
+  const [roomIdToJoin, setRoomIdToJoin] = useState('');
 
   useEffect(() => {
     const userProjectsRef = query(
@@ -79,6 +81,30 @@ const Dashboard = () => {
     navigate(`/editor/${roomId}`);
   };
 
+  const handleJoinRoom = async (e) => {
+    e.preventDefault();
+    if (!roomIdToJoin.trim()) {
+      toast.error('Please enter a Room ID');
+      return;
+    }
+
+    try {
+      const roomRef = ref(database, `rooms/${roomIdToJoin}`);
+      const snapshot = await get(roomRef);
+
+      if (!snapshot.exists()) {
+        toast.error('Room not found');
+        return;
+      }
+
+      setIsJoinModalOpen(false);
+      setRoomIdToJoin('');
+      navigate(`/editor/${roomIdToJoin}`);
+    } catch (error) {
+      toast.error('Failed to join room');
+    }
+  };
+
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-6xl mx-auto">
@@ -96,6 +122,12 @@ const Dashboard = () => {
               className="btn btn-secondary"
             >
               Profile
+            </button>
+            <button
+              onClick={() => setIsJoinModalOpen(true)}
+              className="btn btn-secondary"
+            >
+              Join Room
             </button>
             <button
               onClick={() => setIsModalOpen(true)}
@@ -117,7 +149,23 @@ const Dashboard = () => {
               <h3 className="text-xl font-semibold mb-2">{project.name}</h3>
               <div className="flex items-center justify-between text-sm text-gray-400">
                 <span className="capitalize">{project.language}</span>
-                <span>Room: {project.roomId.slice(0, 8)}...</span>
+                <div className="flex items-center gap-2">
+                  <span>Room: {project.roomId}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigator.clipboard.writeText(project.roomId);
+                      toast.success('Room ID copied to clipboard');
+                    }}
+                    className="p-1 hover:bg-primary rounded"
+                    title="Copy Room ID"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                      <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -169,6 +217,43 @@ const Dashboard = () => {
                   </button>
                   <button type="submit" className="btn btn-primary flex-1">
                     Create
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Join Room Modal */}
+        {isJoinModalOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+            <div className="bg-primary p-6 rounded-xl w-full max-w-md">
+              <h2 className="text-2xl font-bold mb-6">Join Existing Room</h2>
+              <form onSubmit={handleJoinRoom} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Room ID
+                  </label>
+                  <input
+                    type="text"
+                    className="input w-full"
+                    value={roomIdToJoin}
+                    onChange={(e) => setRoomIdToJoin(e.target.value)}
+                    placeholder="Enter Room ID"
+                    required
+                  />
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsJoinModalOpen(false)}
+                    className="btn btn-secondary flex-1"
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary flex-1">
+                    Join
                   </button>
                 </div>
               </form>
