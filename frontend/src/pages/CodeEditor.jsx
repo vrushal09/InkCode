@@ -31,6 +31,9 @@ const CodeEditor = () => {
         // Add CSS for comment indicators
         const style = document.createElement('style');
         style.textContent = `
+            .cm-comments-gutter {
+                width: 28px !important;
+            }
             .cm-comments-gutter .comment-indicator {
                 opacity: 0.8;
                 transition: opacity 0.2s ease;
@@ -38,15 +41,21 @@ const CodeEditor = () => {
             .cm-comments-gutter .comment-indicator:hover {
                 opacity: 1;
             }
+            .comment-gutter-empty {
+                transition: all 0.2s ease;
+            }
             .comment-gutter-empty:hover::after {
                 content: '+';
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                width: 100%;
-                height: 100%;
+                width: 18px;
+                height: 18px;
                 font-size: 16px;
-                color: rgba(59, 130, 246, 0.7);
+                color: white;
+                background-color: rgba(59, 130, 246, 0.7);
+                border-radius: 50%;
+                margin: 0 auto;
             }
         `;
         document.head.appendChild(style);
@@ -76,6 +85,24 @@ const CodeEditor = () => {
     const [newReplyText, setNewReplyText] = useState("");
     const commentInputRef = useRef(null);
     
+    // Add a function to adjust position of comment popups
+    const [windowDimensions, setWindowDimensions] = useState({
+        width: window.innerWidth,
+        height: window.innerHeight
+    });
+
+    useEffect(() => {
+        function handleResize() {
+            setWindowDimensions({
+                width: window.innerWidth,
+                height: window.innerHeight
+            });
+        }
+        
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     useEffect(() => {
         const roomRef = ref(database, `rooms/${roomId}`);
         const unsubscribe = onValue(roomRef, (snapshot) => {
@@ -293,20 +320,31 @@ const CodeEditor = () => {
                     element.style.cursor = "pointer";
                     element.style.width = "100%";
                     element.style.height = "100%";
+                    element.style.display = "flex";
+                    element.style.alignItems = "center";
+                    element.style.justifyContent = "center";
                     
                     const lineComments = comments[lineNo] || {};
                     const hasComments = Object.keys(lineComments).length > 0;
                     
                     if (hasComments) {
-                        element.textContent = Object.keys(lineComments).length;
-                        element.style.backgroundColor = "#3b82f6";
-                        element.style.color = "white";
-                        element.style.borderRadius = "50%";
-                        element.style.display = "flex";
-                        element.style.alignItems = "center";
-                        element.style.justifyContent = "center";
-                        element.style.fontSize = "12px";
-                        element.style.margin = "2px";
+                        // Create a properly styled comment indicator
+                        const indicator = document.createElement("div");
+                        indicator.className = "comment-indicator";
+                        indicator.textContent = Object.keys(lineComments).length;
+                        indicator.style.backgroundColor = "#3b82f6";
+                        indicator.style.color = "white";
+                        indicator.style.borderRadius = "50%";
+                        indicator.style.width = "18px";
+                        indicator.style.height = "18px";
+                        indicator.style.display = "flex";
+                        indicator.style.alignItems = "center";
+                        indicator.style.justifyContent = "center";
+                        indicator.style.fontSize = "12px";
+                        element.appendChild(indicator);
+                    } else {
+                        // Create a "+" on hover effect through CSS
+                        element.className = "comment-gutter-empty";
                     }
                     
                     element.addEventListener("click", () => {
@@ -327,12 +365,12 @@ const CodeEditor = () => {
             return new class extends GutterMarker {
                 toDOM() {
                     const element = document.createElement("div");
-                    element.textContent = "+";
-                    element.style.opacity = "0";
                     return element;
                 }
             };
-        }
+        },
+        // Set a fixed width for the gutter to ensure proper display
+        width: "28px"
     });
 
     // Update effect to fetch blame data and comments
@@ -465,6 +503,28 @@ const CodeEditor = () => {
         remove(replyRef);
     };
 
+    // Add this helper function to calculate the best position for comment popups
+    const calculateCommentPosition = (lineIndex) => {
+        // Basic calculation of line position
+        const linePosition = (lineIndex + 1) * 21;
+        
+        // Get editor container dimensions (assuming there's a ref to the container)
+        const editorRect = document.querySelector('.cm-editor')?.getBoundingClientRect();
+        
+        if (!editorRect) return { top: linePosition };
+        
+        // Calculate maximum position to avoid cutoff at bottom
+        const maxTop = Math.min(
+            linePosition,
+            editorRect.height - 100 // Leave some space at the bottom
+        );
+        
+        return {
+            top: `${maxTop}px`,
+            transform: maxTop === linePosition ? 'translateY(-50%)' : 'none'
+        };
+    };
+
     return (
         <div className="min-h-screen p-4 flex flex-col">
             {/* Header */}
@@ -544,11 +604,14 @@ const CodeEditor = () => {
                         {/* New comment form */}
                         {newCommentLine !== null && (
                             <div 
-                                className="absolute right-4 bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-3 z-10"
+                                className="absolute bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-3 z-10"
                                 style={{ 
                                     top: `${(newCommentLine + 1) * 21}px`,
+                                    right: "20px", // Fixed right position
                                     transform: 'translateY(-50%)',
-                                    width: '280px'
+                                    width: '280px',
+                                    maxHeight: '80vh',
+                                    overflowY: 'auto'
                                 }}>
                                 <textarea
                                     ref={commentInputRef}
@@ -577,11 +640,15 @@ const CodeEditor = () => {
                         
                         {/* Comment thread view */}
                         {activeComment !== null && comments[activeComment] && (
-                            <div className="absolute right-0 top-0 w-80 bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-4 z-10 max-h-[80vh] overflow-y-auto"
-                                 style={{ 
-                                     top: `${(activeComment + 1) * 21}px`, // Adjust based on line height
-                                     transform: 'translateY(-50%)' 
-                                 }}>
+                            <div 
+                                className="absolute bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-4 z-10 overflow-y-auto"
+                                style={{ 
+                                    ...calculateCommentPosition(activeComment),
+                                    right: "20px",
+                                    width: '320px',
+                                    maxHeight: '80vh',
+                                    maxWidth: '90vw'
+                                }}>
                                 <div className="flex justify-between items-center mb-3">
                                     <h3 className="text-sm font-medium text-white">Comments on line {activeComment + 1}</h3>
                                     <button 
