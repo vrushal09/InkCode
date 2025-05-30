@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { auth, database } from "../config/firebase";
-import { ref, onValue, set, remove } from "firebase/database";
+import { ref, onValue, set } from "firebase/database";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { python } from "@codemirror/lang-python";
@@ -14,14 +14,14 @@ const languageExtensions = {
     javascript,
     python,
     java,
-    cpp
+    cpp,
 };
 
 const languageIds = {
     javascript: "nodejs",
     python: "python3",
     java: "java",
-    cpp: "cpp17"
+    cpp: "cpp17",
 };
 
 const CodeEditor = () => {
@@ -35,42 +35,50 @@ const CodeEditor = () => {
 
     useEffect(() => {
         const roomRef = ref(database, `rooms/${roomId}`);
-        const collaboratorsRef = ref(database, `rooms/${roomId}/collaborators`);
-        const userRef = ref(database, `rooms/${roomId}/collaborators/${auth.currentUser.uid}`);
-
-        // Add current user to collaborators list
-        set(userRef, {
-            id: auth.currentUser.uid,
-            name: auth.currentUser.displayName || "Anonymous",
-            photoURL: auth.currentUser.photoURL || `https://api.dicebear.com/7.x/avatars/svg?seed=${auth.currentUser.uid}`,
-            lastActive: Date.now()
-        });
-
-        // Listen to full room data for code/language + creator
-        const roomUnsubscribe = onValue(roomRef, (snapshot) => {
+        const unsubscribe = onValue(roomRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
                 setCode(data.code || "");
                 setLanguage(data.language || "javascript");
-
-                // Check creator
-                const creatorId = data.createdBy || "";
-
-                // Listen to collaborators
-                onValue(collaboratorsRef, (collabSnap) => {
-                    const collabData = collabSnap.val() || {};
-                    const collabList = Object.values(collabData).map((user) => ({
-                        ...user,
-                        isCreator: user.id === creatorId
-                    }));
-                    setCollaborators(collabList);
-                });
             }
         });
 
+        // Track collaborators and creator
+        const roomDetailsRef = ref(database, `rooms/${roomId}`);
+        const roomDetailsUnsubscribe = onValue(roomDetailsRef, (snapshot) => {
+            const data = snapshot.val() || {};
+            const creatorId = data.createdBy;
+
+            const collaboratorsRef = ref(database, `rooms/${roomId}/collaborators`);
+            const collaboratorUnsubscribe = onValue(collaboratorsRef, (snapshot) => {
+                const collaboratorsData = snapshot.val() || {};
+                const collaboratorsList = Object.values(collaboratorsData).map((user) => ({
+                    ...user,
+                    isCreator: user.id === creatorId,
+                }));
+                setCollaborators(collaboratorsList);
+            });
+
+            return () => collaboratorUnsubscribe();
+        });
+
+        // Add current user to collaborators
+        const userRef = ref(database, `rooms/${roomId}/collaborators/${auth.currentUser.uid}`);
+        set(userRef, {
+            id: auth.currentUser.uid,
+            name: auth.currentUser.displayName || "Anonymous",
+            photoURL:
+                auth.currentUser.photoURL ||
+                "https://api.dicebear.com/7.x/avatars/svg?seed=" + auth.currentUser.uid,
+            lastActive: Date.now(),
+            isCreator: false, // Will be updated after creator check
+        });
+
         return () => {
-            roomUnsubscribe();
-            remove(userRef); // remove user from collaborators on unmount
+            unsubscribe();
+            roomDetailsUnsubscribe();
+            // Remove user from collaborators on leaving
+            set(userRef, null);
         };
     }, [roomId]);
 
@@ -80,7 +88,7 @@ const CodeEditor = () => {
         set(roomRef, {
             code: value,
             language,
-            lastUpdated: Date.now()
+            lastUpdated: Date.now(),
         });
     };
 
@@ -92,7 +100,8 @@ const CodeEditor = () => {
             const response = await fetch(JDOODLE_CONFIG.endpoint, {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "Cross-Origin-Opener-Policy": "same-origin",
                 },
                 body: JSON.stringify({
                     clientId: JDOODLE_CONFIG.clientId,
@@ -100,15 +109,18 @@ const CodeEditor = () => {
                     script: code,
                     stdin: input,
                     language: languageIds[language],
-                    versionIndex: "0"
-                })
+                    versionIndex: "0",
+                }),
             });
 
             const data = await response.json();
-            if (data.error) throw new Error(data.error);
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
             setOutput(data.output);
-        } catch (err) {
-            toast.error("Failed to execute code: " + err.message);
+        } catch (error) {
+            toast.error("Failed to execute code: " + error.message);
             setOutput("Error: Failed to execute code");
         } finally {
             setIsExecuting(false);
@@ -125,8 +137,10 @@ const CodeEditor = () => {
                         {collaborators.map((user) => (
                             <div
                                 key={user.id}
-                                className="flex items-center gap-2 px-2 py-1 bg-secondary rounded-full text-sm"
-                                title={`${user.name}\nLast active: ${new Date(user.lastActive).toLocaleString()}`}
+                                className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-secondary`}
+                                title={`${user.name}\nLast active: ${new Date(
+                                    user.lastActive
+                                ).toLocaleString()}`}
                             >
                                 <img
                                     src={user.photoURL}
@@ -135,15 +149,19 @@ const CodeEditor = () => {
                                 />
                                 <span>{user.name}</span>
                                 {user.isCreator && (
-                                    <span className="text-xs bg-primary px-1.5 py-0.5 rounded-full">
-                                        Creator
+                                    <span className="text-xs font-bold text-white bg-blue-600 rounded-full px-2 py-0.5">
+                                        C
                                     </span>
                                 )}
                             </div>
                         ))}
                     </div>
                 </div>
-                <select value={language} onChange={(e) => setLanguage(e.target.value)} className="input">
+                <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    className="input"
+                >
                     {Object.keys(languageIds).map((lang) => (
                         <option key={lang} value={lang}>
                             {lang.charAt(0).toUpperCase() + lang.slice(1)}
@@ -161,6 +179,7 @@ const CodeEditor = () => {
                             height="100%"
                             theme="dark"
                             extensions={[languageExtensions[language]()]}
+
                             onChange={handleCodeChange}
                         />
                     </div>
