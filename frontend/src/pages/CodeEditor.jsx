@@ -9,6 +9,8 @@ import { java } from "@codemirror/lang-java";
 import { cpp } from "@codemirror/lang-cpp";
 import { toast } from "react-toastify";
 import { JDOODLE_CONFIG } from "../config/jdoodle";
+// import { Tooltip } from "@uiw/react-tooltip";
+import { hoverTooltip } from "@codemirror/view";
 
 const languageExtensions = {
     javascript,
@@ -32,6 +34,7 @@ const CodeEditor = () => {
     const [language, setLanguage] = useState("javascript");
     const [isExecuting, setIsExecuting] = useState(false);
     const [collaborators, setCollaborators] = useState([]);
+    const [codeBlame, setCodeBlame] = useState({});
 
     useEffect(() => {
         const roomRef = ref(database, `rooms/${roomId}`);
@@ -90,16 +93,39 @@ const CodeEditor = () => {
         onValue(roomRef, (snapshot) => {
             const currentData = snapshot.val() || {};
             
+            // Save code with author information
+            const now = Date.now();
+            const codeChange = {
+                userId: auth.currentUser.uid,
+                userName: auth.currentUser.displayName || "Anonymous",
+                userPhoto: auth.currentUser.photoURL || 
+                    "https://api.dicebear.com/7.x/avatars/svg?seed=" + auth.currentUser.uid,
+                timestamp: now,
+                code: value
+            };
+            
+            // Track code changes by storing the last editor
+            const blameData = { ...(currentData.codeBlame || {}) };
+            blameData.lastEditor = {
+                userId: auth.currentUser.uid,
+                userName: auth.currentUser.displayName || "Anonymous",
+                userPhoto: auth.currentUser.photoURL ||
+                    "https://api.dicebear.com/7.x/avatars/svg?seed=" + auth.currentUser.uid,
+                timestamp: now
+            };
+            
             // Then update only the code and timestamp while preserving other fields
             set(roomRef, {
                 ...currentData,
                 code: value,
                 language,
-                lastUpdated: Date.now(),
+                lastUpdated: now,
+                codeBlame: blameData,
+                lastCodeChange: codeChange
             });
         }, { onlyOnce: true });
     };
-
+    
     const executeCode = async () => {
         setIsExecuting(true);
         setOutput("");
@@ -135,6 +161,92 @@ const CodeEditor = () => {
         }
     };
 
+    // Create hover tooltip extension for CodeMirror with improved styling
+    const blameTooltipExtension = hoverTooltip((view, pos) => {
+        if (!codeBlame.lastEditor) return null;
+        
+        return {
+            pos,
+            end: pos,
+            above: true,
+            create() {
+                const dom = document.createElement("div");
+                const { lastEditor } = codeBlame;
+                
+                // Apply more visible styling
+                dom.style.backgroundColor = "#1e293b";
+                dom.style.color = "white";
+                dom.style.padding = "8px 12px";
+                dom.style.borderRadius = "6px";
+                dom.style.boxShadow = "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)";
+                dom.style.display = "flex";
+                dom.style.alignItems = "center";
+                dom.style.gap = "10px";
+                dom.style.zIndex = "9999";
+                dom.style.fontFamily = "system-ui, -apple-system, sans-serif";
+                dom.style.fontSize = "14px";
+                
+                dom.innerHTML = `
+                    <img src="${lastEditor.userPhoto}" alt="${lastEditor.userName}" 
+                        style="width: 24px; height: 24px; border-radius: 50%;" />
+                    <div>
+                        <div style="font-weight: 500;">${lastEditor.userName}</div>
+                        <div style="font-size: 11px; color: #cbd5e0;">
+                            Edited ${new Date(lastEditor.timestamp).toLocaleString()}
+                        </div>
+                    </div>
+                `;
+                return { dom };
+            }
+        };
+    });
+    
+    // Update effect to fetch blame data
+    useEffect(() => {
+        const roomRef = ref(database, `rooms/${roomId}`);
+        const unsubscribe = onValue(roomRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                setCode(data.code || "");
+                setLanguage(data.language || "javascript");
+            }
+        });
+
+        // Track collaborators and creator
+        const roomDetailsRef = ref(database, `rooms/${roomId}`);
+        const roomDetailsUnsubscribe = onValue(roomDetailsRef, (snapshot) => {
+            const data = snapshot.val() || {};
+            const creatorId = data.createdBy;
+
+            const collaboratorsRef = ref(database, `rooms/${roomId}/collaborators`);
+            const collaboratorUnsubscribe = onValue(collaboratorsRef, (snapshot) => {
+                const collaboratorsData = snapshot.val() || {};
+                const collaboratorsList = Object.values(collaboratorsData).map((user) => ({
+                    ...user,
+                    isCreator: user.id === creatorId,
+                }));
+                setCollaborators(collaboratorsList);
+            });
+
+            return () => collaboratorUnsubscribe();
+        });
+
+        // Add listener for blame data
+        const blameRef = ref(database, `rooms/${roomId}/codeBlame`);
+        const blameUnsubscribe = onValue(blameRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                setCodeBlame(data);
+            }
+        });
+        
+        return () => {
+            unsubscribe();
+            roomDetailsUnsubscribe();
+            blameUnsubscribe();
+        };
+    }, [roomId]);
+
     return (
         <div className="min-h-screen p-4 flex flex-col">
             {/* Header */}
@@ -165,6 +277,22 @@ const CodeEditor = () => {
                         ))}
                     </div>
                 </div>
+                
+                {/* Add last editor info */}
+                {codeBlame.lastEditor && (
+                    <div className="flex items-center text-sm text-gray-400 mx-4">
+                        <span>Last edited by: </span>
+                        <div className="flex items-center gap-2 ml-2">
+                            <img 
+                                src={codeBlame.lastEditor.userPhoto} 
+                                alt={codeBlame.lastEditor.userName}
+                                className="w-5 h-5 rounded-full" 
+                            />
+                            <span>{codeBlame.lastEditor.userName}</span>
+                        </div>
+                    </div>
+                )}
+                
                 <select
                     value={language}
                     onChange={(e) => setLanguage(e.target.value)}
@@ -186,11 +314,14 @@ const CodeEditor = () => {
                             value={code}
                             height="100%"
                             theme="dark"
-                            extensions={[languageExtensions[language]()]}
-
+                            extensions={[
+                                languageExtensions[language](),
+                                blameTooltipExtension
+                            ]}
                             onChange={handleCodeChange}
                         />
                     </div>
+                    
                     <div className="h-1/3 card overflow-hidden">
                         <h3 className="text-lg font-medium mb-2">Input</h3>
                         <textarea
