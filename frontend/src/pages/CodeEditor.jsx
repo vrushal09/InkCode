@@ -7,16 +7,52 @@ import { javascript } from "@codemirror/lang-javascript";
 import { python } from "@codemirror/lang-python";
 import { java } from "@codemirror/lang-java";
 import { cpp } from "@codemirror/lang-cpp";
+import { css } from "@codemirror/lang-css";
+import { html } from "@codemirror/lang-html";
+import { json } from "@codemirror/lang-json";
+import { markdown } from "@codemirror/lang-markdown";
+import { php } from "@codemirror/lang-php";
+import { rust } from "@codemirror/lang-rust";
+import { sql } from "@codemirror/lang-sql";
+import { xml } from "@codemirror/lang-xml";
+import { yaml } from "@codemirror/lang-yaml";
+import { StreamLanguage } from "@codemirror/language";
+import { c, csharp, kotlin, scala } from "@codemirror/legacy-modes/mode/clike";
+import { shell } from "@codemirror/legacy-modes/mode/shell";
 import { toast } from "react-toastify";
 import { JDOODLE_CONFIG } from "../config/jdoodle";
 import { hoverTooltip } from "@codemirror/view";
 import { EditorView, gutter, GutterMarker } from "@codemirror/view";
 
 const languageExtensions = {
-    javascript,
-    python,
-    java,
-    cpp,
+    javascript: () => javascript(),
+    python: () => python(),
+    java: () => java(),
+    cpp: () => cpp(),
+    c: () => StreamLanguage.define(c),
+    csharp: () => StreamLanguage.define(csharp),
+    go: () => StreamLanguage.define(c), // Fallback to C-like syntax
+    rust: () => rust(),
+    typescript: () => javascript(), // TypeScript uses same highlighting as JavaScript
+    php: () => php(),
+    ruby: () => StreamLanguage.define(c), // Fallback to C-like syntax
+    swift: () => StreamLanguage.define(c), // Fallback to C-like syntax
+    kotlin: () => StreamLanguage.define(kotlin),
+    scala: () => StreamLanguage.define(scala),
+    dart: () => StreamLanguage.define(c), // Fallback to C-like syntax
+    r: () => StreamLanguage.define(c), // Fallback to C-like syntax
+    perl: () => StreamLanguage.define(c), // Fallback to C-like syntax
+    lua: () => StreamLanguage.define(c), // Fallback to C-like syntax
+    bash: () => StreamLanguage.define(shell),
+    powershell: () => StreamLanguage.define(shell), // Fallback to shell
+    html: () => html(),
+    css: () => css(),
+    json: () => json(),
+    xml: () => xml(),
+    yaml: () => yaml(),
+    markdown: () => markdown(),
+    sql: () => sql(),
+    plaintext: () => []
 };
 
 const languageIds = {
@@ -24,6 +60,30 @@ const languageIds = {
     python: "python3",
     java: "java",
     cpp: "cpp17",
+    c: "c",
+    csharp: "csharp",
+    go: "go",
+    rust: "rust",
+    typescript: "nodejs", // TypeScript compiled to JS
+    php: "php",
+    ruby: "ruby",
+    swift: "swift",
+    kotlin: "kotlin",
+    scala: "scala",
+    dart: "dart",
+    r: "r",
+    perl: "perl",
+    lua: "lua",
+    bash: "bash",
+    powershell: "powershell",
+    html: "nodejs", // For HTML, we'll run as Node.js
+    css: "nodejs", // For CSS, we'll run as Node.js
+    json: "nodejs", // For JSON, we'll run as Node.js
+    xml: "nodejs", // For XML, we'll run as Node.js
+    yaml: "nodejs", // For YAML, we'll run as Node.js
+    markdown: "nodejs", // For Markdown, we'll run as Node.js
+    sql: "sql",
+    plaintext: "nodejs"
 };
 
 const CodeEditor = () => {
