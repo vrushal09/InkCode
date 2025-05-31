@@ -185,7 +185,7 @@ const Dashboard = () => {
       javascript: '🟨',
       python: '🐍',
       java: '☕',
-      cpp: '⚡',
+      cpp: '⚡',  
     };
     return icons[language] || '📄';
   };
@@ -237,15 +237,41 @@ const Dashboard = () => {
 
             {/* Action Buttons */}
             <div className="flex items-center space-x-3">
+              {/* Profile Image/Avatar */}
               <button
                 onClick={() => navigate('/profile')}
-                className="p-2 text-gray-400 hover:text-white hover:bg-[#1a1a23] rounded-lg transition-colors"
+                className="relative group"
                 title="Profile"
               >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
+                <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-gray-700 group-hover:border-violet-600 transition-colors">
+                  {auth.currentUser?.photoURL ? (
+                    <img
+                      src={auth.currentUser.photoURL}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback to gradient avatar if image fails to load
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div 
+                    className={`w-full h-full bg-gradient-to-r from-violet-600 to-purple-600 flex items-center justify-center ${
+                      auth.currentUser?.photoURL ? 'hidden' : 'flex'
+                    }`}
+                  >
+                    <span className="text-white font-bold text-sm">
+                      {auth.currentUser?.displayName?.charAt(0)?.toUpperCase() || 
+                       auth.currentUser?.email?.charAt(0)?.toUpperCase() || 'U'}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Online status indicator */}
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-[#111119] rounded-full"></div>
               </button>
+
               <button
                 onClick={() => setIsJoinModalOpen(true)}
                 className="px-4 py-2 bg-[#1a1a23] text-gray-300 border border-gray-700 rounded-lg hover:bg-[#2a2a35] hover:text-white transition-colors text-sm font-medium"
