@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { auth, database } from "../config/firebase";
 import { ref, onValue, set, push, remove } from "firebase/database";
 import CodeMirror from "@uiw/react-codemirror";
@@ -27,8 +27,10 @@ const languageIds = {
 };
 
 const CodeEditor = () => {
+    const navigate = useNavigate();
+
     useEffect(() => {
-        // Add CSS for comment indicators
+        // Add CSS for comment indicators with updated dark theme and custom scrollbar
         const style = document.createElement('style');
         style.textContent = `
             .cm-comments-gutter {
@@ -53,20 +55,42 @@ const CodeEditor = () => {
                 height: 18px;
                 font-size: 16px;
                 color: white;
-                background-color: rgba(59, 130, 246, 0.7);
+                background-color: rgba(139, 92, 246, 0.7);
                 border-radius: 50%;
                 margin: 0 auto;
             }
+            
+            /* Custom scrollbar styles */
+            .custom-scrollbar::-webkit-scrollbar {
+                width: 8px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+                background: #1f2937;
+                border-radius: 4px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: #4b5563;
+                border-radius: 4px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                background: #6b7280;
+            }
+            
+            /* Firefox scrollbar */
+            .custom-scrollbar {
+                scrollbar-width: thin;
+                scrollbar-color: #4b5563 #1f2937;
+            }
         `;
         document.head.appendChild(style);
-        
+
         return () => {
             if (style.parentNode) {
                 document.head.removeChild(style);
             }
         };
     }, []);
-    
+
     const { roomId } = useParams();
     const [code, setCode] = useState("");
     const [input, setInput] = useState("");
@@ -76,7 +100,7 @@ const CodeEditor = () => {
     const [collaborators, setCollaborators] = useState([]);
     const [codeBlame, setCodeBlame] = useState({});
     const [lineBlameData, setLineBlameData] = useState({});
-    
+
     // Add new state for comments
     const [comments, setComments] = useState({});
     const [activeComment, setActiveComment] = useState(null);
@@ -84,7 +108,7 @@ const CodeEditor = () => {
     const [newCommentText, setNewCommentText] = useState("");
     const [newReplyText, setNewReplyText] = useState("");
     const commentInputRef = useRef(null);
-    
+
     // Add a function to adjust position of comment popups
     const [windowDimensions, setWindowDimensions] = useState({
         width: window.innerWidth,
@@ -98,7 +122,7 @@ const CodeEditor = () => {
                 height: window.innerHeight
             });
         }
-        
+
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
@@ -141,7 +165,7 @@ const CodeEditor = () => {
                 auth.currentUser.photoURL ||
                 "https://api.dicebear.com/7.x/avatars/svg?seed=" + auth.currentUser.uid,
             lastActive: Date.now(),
-            isCreator: false, // Will be updated after creator check
+            isCreator: false,
         });
 
         return () => {
@@ -156,20 +180,20 @@ const CodeEditor = () => {
     const handleCodeChange = (value) => {
         setCode(value);
         const roomRef = ref(database, `rooms/${roomId}`);
-        
+
         // First read the current room data
         onValue(roomRef, (snapshot) => {
             const currentData = snapshot.val() || {};
             const now = Date.now();
-            
+
             // Get old code lines and new code lines
             const oldCode = currentData.code || "";
             const oldLines = oldCode.split('\n');
             const newLines = value.split('\n');
-            
+
             // Create or update the lineBlame object
             const lineBlame = { ...(currentData.lineBlame || {}) };
-            
+
             // Track changed lines by comparing old and new code
             for (let i = 0; i < newLines.length; i++) {
                 // If line is new or changed, update blame data
@@ -183,7 +207,7 @@ const CodeEditor = () => {
                     };
                 }
             }
-            
+
             // Keep track of last editor for the whole file
             const blameData = { ...(currentData.codeBlame || {}) };
             blameData.lastEditor = {
@@ -193,7 +217,7 @@ const CodeEditor = () => {
                     "https://api.dicebear.com/7.x/avatars/svg?seed=" + auth.currentUser.uid,
                 timestamp: now
             };
-            
+
             // Then update data preserving other fields
             set(roomRef, {
                 ...currentData,
@@ -205,7 +229,7 @@ const CodeEditor = () => {
             });
         }, { onlyOnce: true });
     };
-    
+
     const executeCode = async () => {
         setIsExecuting(true);
         setOutput("");
@@ -233,6 +257,7 @@ const CodeEditor = () => {
             }
 
             setOutput(data.output);
+            toast.success('Code executed successfully!');
         } catch (error) {
             toast.error("Failed to execute code: " + error.message);
             setOutput("Error: Failed to execute code");
@@ -244,7 +269,7 @@ const CodeEditor = () => {
     // Create hover tooltip extension for CodeMirror with improved styling
     const blameTooltipExtension = hoverTooltip((view, pos) => {
         if (!codeBlame.lastEditor) return null;
-        
+
         return {
             pos,
             end: pos,
@@ -252,32 +277,28 @@ const CodeEditor = () => {
             create() {
                 const dom = document.createElement("div");
                 const { lastEditor } = codeBlame;
-                
-                
+
                 return { dom };
             }
         };
     });
-    
+
     // Create a new tooltip extension for line-by-line blame
     const lineBlameTooltipExtension = hoverTooltip((view, pos) => {
-        // Get the line number at cursor position
         const line = view.state.doc.lineAt(pos);
-        const lineIndex = line.number - 1; // Convert to 0-indexed
-        
-        // Check if we have blame data for this line
+        const lineIndex = line.number - 1;
+
         if (!lineBlameData[lineIndex]) return null;
-        
+
         const lineInfo = lineBlameData[lineIndex];
-        
+
         return {
             pos: line.from,
             end: line.to,
             above: true,
             create() {
                 const dom = document.createElement("div");
-                
-                // Apply styling
+
                 dom.style.backgroundColor = "#1e293b";
                 dom.style.color = "white";
                 dom.style.padding = "8px 12px";
@@ -289,7 +310,7 @@ const CodeEditor = () => {
                 dom.style.zIndex = "9999";
                 dom.style.fontFamily = "system-ui, -apple-system, sans-serif";
                 dom.style.fontSize = "14px";
-                
+
                 dom.innerHTML = `
                     <img src="${lineInfo.userPhoto}" alt="${lineInfo.userName}" 
                         style="width: 24px; height: 24px; border-radius: 50%;" />
@@ -312,8 +333,7 @@ const CodeEditor = () => {
         lineMarker(view, line) {
             const lineInfo = view.state.doc.lineAt(line.from);
             const lineNo = lineInfo.number - 1;
-            
-            // Create a basic marker for each line
+
             const marker = new class extends GutterMarker {
                 toDOM() {
                     const element = document.createElement("div");
@@ -323,16 +343,15 @@ const CodeEditor = () => {
                     element.style.display = "flex";
                     element.style.alignItems = "center";
                     element.style.justifyContent = "center";
-                    
+
                     const lineComments = comments[lineNo] || {};
                     const hasComments = Object.keys(lineComments).length > 0;
-                    
+
                     if (hasComments) {
-                        // Create a properly styled comment indicator
                         const indicator = document.createElement("div");
                         indicator.className = "comment-indicator";
                         indicator.textContent = Object.keys(lineComments).length;
-                        indicator.style.backgroundColor = "#3b82f6";
+                        indicator.style.backgroundColor = "#8b5cf6";
                         indicator.style.color = "white";
                         indicator.style.borderRadius = "50%";
                         indicator.style.width = "18px";
@@ -343,10 +362,9 @@ const CodeEditor = () => {
                         indicator.style.fontSize = "12px";
                         element.appendChild(indicator);
                     } else {
-                        // Create a "+" on hover effect through CSS
                         element.className = "comment-gutter-empty";
                     }
-                    
+
                     element.addEventListener("click", () => {
                         if (hasComments) {
                             setActiveComment(lineNo);
@@ -354,11 +372,11 @@ const CodeEditor = () => {
                             handleStartComment(lineNo);
                         }
                     });
-                    
+
                     return element;
                 }
             };
-            
+
             return marker;
         },
         initialSpacer() {
@@ -369,7 +387,6 @@ const CodeEditor = () => {
                 }
             };
         },
-        // Set a fixed width for the gutter to ensure proper display
         width: "28px"
     });
 
@@ -384,7 +401,6 @@ const CodeEditor = () => {
             }
         });
 
-        // Track collaborators and creator
         const roomDetailsRef = ref(database, `rooms/${roomId}`);
         const roomDetailsUnsubscribe = onValue(roomDetailsRef, (snapshot) => {
             const data = snapshot.val() || {};
@@ -403,7 +419,6 @@ const CodeEditor = () => {
             return () => collaboratorUnsubscribe();
         });
 
-        // Add listener for blame data
         const blameRef = ref(database, `rooms/${roomId}/codeBlame`);
         const blameUnsubscribe = onValue(blameRef, (snapshot) => {
             const data = snapshot.val();
@@ -411,8 +426,7 @@ const CodeEditor = () => {
                 setCodeBlame(data);
             }
         });
-        
-        // Add listener for line blame data
+
         const lineBlameRef = ref(database, `rooms/${roomId}/lineBlame`);
         const lineBlameUnsubscribe = onValue(lineBlameRef, (snapshot) => {
             const data = snapshot.val();
@@ -420,14 +434,13 @@ const CodeEditor = () => {
                 setLineBlameData(data);
             }
         });
-        
-        // Add listener for comments
+
         const commentsRef = ref(database, `rooms/${roomId}/comments`);
         const commentsUnsubscribe = onValue(commentsRef, (snapshot) => {
             const data = snapshot.val() || {};
             setComments(data);
         });
-        
+
         return () => {
             unsubscribe();
             roomDetailsUnsubscribe();
@@ -442,61 +455,60 @@ const CodeEditor = () => {
         setNewCommentLine(lineIndex);
         setActiveComment(null);
         setNewCommentText("");
-        
-        // Focus the input after rendering
+
         setTimeout(() => {
             if (commentInputRef.current) {
                 commentInputRef.current.focus();
             }
         }, 10);
     };
-    
+
     // Function to add a comment to a specific line
     const handleAddComment = () => {
         if (!newCommentText.trim() || newCommentLine === null) return;
-        
+
         const commentsRef = ref(database, `rooms/${roomId}/comments/${newCommentLine}`);
         const newCommentRef = push(commentsRef);
-        
+
         set(newCommentRef, {
             text: newCommentText.trim(),
             userId: auth.currentUser.uid,
             userName: auth.currentUser.displayName || "Anonymous",
-            userPhoto: auth.currentUser.photoURL || 
+            userPhoto: auth.currentUser.photoURL ||
                 "https://api.dicebear.com/7.x/avatars/svg?seed=" + auth.currentUser.uid,
             timestamp: Date.now(),
             replies: {}
         });
-        
+
         setNewCommentLine(null);
         setNewCommentText("");
     };
-    
+
     // Function to add a reply to a comment
     const handleAddReply = (lineIndex, commentId) => {
         if (!newReplyText.trim()) return;
-        
+
         const replyRef = ref(database, `rooms/${roomId}/comments/${lineIndex}/${commentId}/replies`);
         const newReplyRef = push(replyRef);
-        
+
         set(newReplyRef, {
             text: newReplyText.trim(),
             userId: auth.currentUser.uid,
             userName: auth.currentUser.displayName || "Anonymous",
-            userPhoto: auth.currentUser.photoURL || 
+            userPhoto: auth.currentUser.photoURL ||
                 "https://api.dicebear.com/7.x/avatars/svg?seed=" + auth.currentUser.uid,
             timestamp: Date.now()
         });
-        
+
         setNewReplyText("");
     };
-    
+
     // Function to delete a comment
     const handleDeleteComment = (lineIndex, commentId) => {
         const commentRef = ref(database, `rooms/${roomId}/comments/${lineIndex}/${commentId}`);
         remove(commentRef);
     };
-    
+
     // Function to delete a reply
     const handleDeleteReply = (lineIndex, commentId, replyId) => {
         const replyRef = ref(database, `rooms/${roomId}/comments/${lineIndex}/${commentId}/replies/${replyId}`);
@@ -505,20 +517,16 @@ const CodeEditor = () => {
 
     // Add this helper function to calculate the best position for comment popups
     const calculateCommentPosition = (lineIndex) => {
-        // Basic calculation of line position
         const linePosition = (lineIndex + 1) * 21;
-        
-        // Get editor container dimensions (assuming there's a ref to the container)
         const editorRect = document.querySelector('.cm-editor')?.getBoundingClientRect();
-        
+
         if (!editorRect) return { top: linePosition };
-        
-        // Calculate maximum position to avoid cutoff at bottom
+
         const maxTop = Math.min(
             linePosition,
-            editorRect.height - 100 // Leave some space at the bottom
+            editorRect.height - 100
         );
-        
+
         return {
             top: `${maxTop}px`,
             transform: maxTop === linePosition ? 'translateY(-50%)' : 'none'
@@ -526,250 +534,327 @@ const CodeEditor = () => {
     };
 
     return (
-        <div className="min-h-screen p-4 flex flex-col">
+        <div className="min-h-screen bg-[#09090f] text-white">
             {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-4">
-                    <h2 className="text-xl font-semibold">Room ID: {roomId}</h2>
-                    <div className="flex items-center gap-2">
-                        {collaborators.map((user) => (
-                            <div
-                                key={user.id}
-                                className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-secondary`}
-                                title={`${user.name}\nLast active: ${new Date(
-                                    user.lastActive
-                                ).toLocaleString()}`}
-                            >
-                                <img
-                                    src={user.photoURL}
-                                    alt={user.name}
-                                    className="w-6 h-6 rounded-full"
-                                />
-                                <span>{user.name}</span>
-                                {user.isCreator && (
-                                    <span className="text-xs font-bold text-white bg-blue-600 rounded-full px-2 py-0.5">
-                                        C
-                                    </span>
-                                )}
+            <div className="bg-[#111119] border-b border-gray-800 sticky top-0 z-40">
+                <div className="max-w-7xl mx-auto px-6 py-4">
+                    <div className="flex items-center justify-between">
+                        {/* Logo and Room Info */}
+                        <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 bg-gradient-to-r from-violet-600 to-purple-600 rounded-lg flex items-center justify-center">
+                                    <span className="text-white font-bold text-sm">IC</span>
+                                </div>
+                                <div>
+                                    <h1 className="text-xl font-bold">Code Editor</h1>
+                                    <p className="text-xs text-gray-400">Room: {roomId}</p>
+                                </div>
                             </div>
-                        ))}
-                    </div>
-                </div>
-                
-                {/* Add last editor info */}
-                {codeBlame.lastEditor && (
-                    <div className="flex items-center text-sm text-gray-400 mx-4">
-                        <span>Last edited by: </span>
-                        <div className="flex items-center gap-2 ml-2">
-                            <img 
-                                src={codeBlame.lastEditor.userPhoto} 
-                                alt={codeBlame.lastEditor.userName}
-                                className="w-5 h-5 rounded-full" 
-                            />
-                            <span>{codeBlame.lastEditor.userName}</span>
                         </div>
-                    </div>
-                )}
-                
-                <select
-                    value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
-                    className="input"
-                >
-                    {Object.keys(languageIds).map((lang) => (
-                        <option key={lang} value={lang}>
-                            {lang.charAt(0).toUpperCase() + lang.slice(1)}
-                        </option>
-                    ))}
-                </select>
-            </div>
 
-            {/* Editor */}
-            <div className="flex-1 grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-4">
-                    <div className="flex-1 card overflow-hidden relative">
-                        <CodeMirror
-                            value={code}
-                            height="100%"
-                            theme="dark"
-                            extensions={[
-                                languageExtensions[language](),
-                                blameTooltipExtension,
-                                lineBlameTooltipExtension,
-                                commentGutter
-                            ]}
-                            onChange={handleCodeChange}
-                        />
-                        
-                        {/* New comment form */}
-                        {newCommentLine !== null && (
-                            <div 
-                                className="absolute bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-3 z-10"
-                                style={{ 
-                                    top: `${(newCommentLine + 1) * 21}px`,
-                                    right: "20px", // Fixed right position
-                                    transform: 'translateY(-50%)',
-                                    width: '280px',
-                                    maxHeight: '80vh',
-                                    overflowY: 'auto'
-                                }}>
-                                <textarea
-                                    ref={commentInputRef}
-                                    className="w-full p-2 bg-gray-900 border border-gray-700 rounded resize-none text-sm focus:outline-none focus:border-blue-500"
-                                    rows="3"
-                                    value={newCommentText}
-                                    onChange={(e) => setNewCommentText(e.target.value)}
-                                    placeholder="Add a comment..."
-                                ></textarea>
-                                <div className="flex justify-end mt-2 gap-2">
-                                    <button 
-                                        className="px-3 py-1 text-xs bg-transparent text-gray-400 hover:text-white rounded"
-                                        onClick={() => setNewCommentLine(null)}
+                        {/* Collaborators */}
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                                {collaborators.map((user) => (
+                                    <div
+                                        key={user.id}
+                                        className="relative group"
+                                        title={`${user.name}\nLast active: ${new Date(user.lastActive).toLocaleString()}`}
                                     >
-                                        Cancel
-                                    </button>
-                                    <button 
-                                        className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
-                                        onClick={handleAddComment}
-                                    >
-                                        Comment
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                        
-                        {/* Comment thread view */}
-                        {activeComment !== null && comments[activeComment] && (
-                            <div 
-                                className="absolute bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-4 z-10 overflow-y-auto"
-                                style={{ 
-                                    ...calculateCommentPosition(activeComment),
-                                    right: "20px",
-                                    width: '320px',
-                                    maxHeight: '80vh',
-                                    maxWidth: '90vw'
-                                }}>
-                                <div className="flex justify-between items-center mb-3">
-                                    <h3 className="text-sm font-medium text-white">Comments on line {activeComment + 1}</h3>
-                                    <button 
-                                        className="p-1 text-gray-400 hover:text-white rounded"
-                                        onClick={() => setActiveComment(null)}
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
-                                
-                                {Object.entries(comments[activeComment]).map(([commentId, comment]) => (
-                                    <div key={commentId} className="mb-4 p-3 bg-gray-900 rounded-lg">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <img src={comment.userPhoto} alt={comment.userName} className="w-6 h-6 rounded-full" />
-                                            <div>
-                                                <div className="text-sm font-medium">{comment.userName}</div>
-                                                <div className="text-xs text-gray-400">
-                                                    {new Date(comment.timestamp).toLocaleString()}
-                                                </div>
-                                            </div>
-                                            
-                                            {comment.userId === auth.currentUser.uid && (
-                                                <button 
-                                                    className="ml-auto text-xs text-gray-400 hover:text-red-500"
-                                                    onClick={() => handleDeleteComment(activeComment, commentId)}
-                                                >
-                                                    Delete
-                                                </button>
-                                            )}
-                                        </div>
-                                        
-                                        <p className="text-sm mb-3">{comment.text}</p>
-                                        
-                                        {/* Replies section */}
-                                        {comment.replies && Object.entries(comment.replies).length > 0 && (
-                                            <div className="pl-3 border-l border-gray-700 mt-3 space-y-3">
-                                                {Object.entries(comment.replies).map(([replyId, reply]) => (
-                                                    <div key={replyId} className="bg-gray-800 p-2 rounded">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <img src={reply.userPhoto} alt={reply.userName} className="w-4 h-4 rounded-full" />
-                                                            <div className="text-xs font-medium">{reply.userName}</div>
-                                                            <div className="text-xs text-gray-400">
-                                                                {new Date(reply.timestamp).toLocaleString()}
-                                                            </div>
-                                                            
-                                                            {reply.userId === auth.currentUser.uid && (
-                                                                <button 
-                                                                    className="ml-auto text-xs text-gray-400 hover:text-red-500"
-                                                                    onClick={() => handleDeleteReply(activeComment, commentId, replyId)}
-                                                                >
-                                                                    Delete
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                        <p className="text-xs">{reply.text}</p>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                        
-                                        {/* Reply input */}
-                                        <div className="mt-3 flex gap-2">
-                                            <input
-                                                type="text"
-                                                className="flex-1 p-2 text-xs bg-gray-700 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
-                                                placeholder="Add a reply..."
-                                                value={newReplyText}
-                                                onChange={(e) => setNewReplyText(e.target.value)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                                        e.preventDefault();
-                                                        handleAddReply(activeComment, commentId);
-                                                    }
-                                                }}
+                                        <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-gray-700 group-hover:border-violet-600 transition-colors">
+                                            <img
+                                                src={user.photoURL}
+                                                alt={user.name}
+                                                className="w-full h-full object-cover"
                                             />
-                                            <button 
-                                                className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
-                                                onClick={() => handleAddReply(activeComment, commentId)}
-                                            >
-                                                Reply
-                                            </button>
                                         </div>
+                                        {user.isCreator && (
+                                            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-yellow-500 border-2 border-[#111119] rounded-full"></div>
+                                        )}
                                     </div>
                                 ))}
-                                
-                                <button 
-                                    className="w-full py-2 text-xs bg-gray-700 hover:bg-gray-600 text-white rounded-lg mt-2"
-                                    onClick={() => handleStartComment(activeComment)}
-                                >
-                                    Add another comment
-                                </button>
                             </div>
-                        )}
-                    </div>
-                    
-                    <div className="h-1/3 card overflow-hidden">
-                        <h3 className="text-lg font-medium mb-2">Input</h3>
-                        <textarea
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            className="w-full h-[calc(100%-2rem)] bg-transparent resize-none focus:outline-none"
-                            placeholder="Enter input here..."
-                        />
+
+                            {/* Last Editor Info */}
+                            {codeBlame.lastEditor && (
+                                <div className="hidden md:flex items-center text-sm text-gray-400">
+                                    <span>Last edited by: </span>
+                                    <div className="flex items-center gap-2 ml-2">
+                                        <img
+                                            src={codeBlame.lastEditor.userPhoto}
+                                            alt={codeBlame.lastEditor.userName}
+                                            className="w-5 h-5 rounded-full"
+                                        />
+                                        <span>{codeBlame.lastEditor.userName}</span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Language Selector and Back Button */}
+                        <div className="flex items-center space-x-3">
+                            <select
+                                value={language}
+                                onChange={(e) => setLanguage(e.target.value)}
+                                className="px-3 py-2 bg-[#1a1a23] border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-600"
+                            >
+                                {Object.keys(languageIds).map((lang) => (
+                                    <option key={lang} value={lang}>
+                                        {lang.charAt(0).toUpperCase() + lang.slice(1)}
+                                    </option>
+                                ))}
+                            </select>
+                            <button
+                                onClick={() => navigate('/dashboard')}
+                                className="flex items-center space-x-2 px-4 py-2 bg-[#1a1a23] text-gray-300 border border-gray-700 rounded-lg hover:bg-[#2a2a35] hover:text-white transition-colors text-sm font-medium"
+                            >
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                </svg>
+                                <span>Back</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <div className="flex flex-col gap-4">
-                    <div className="card mb-4">
-                        <button
-                            onClick={executeCode}
-                            disabled={isExecuting}
-                            className="btn btn-primary w-full"
-                        >
-                            {isExecuting ? "Executing..." : "Run Code"}
-                        </button>
+            {/* Main Content */}
+            <div className="max-w-7xl mx-auto px-6 py-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-fit">
+                    {/* Left Panel - Editor and Input */}
+                    <div className="flex flex-col gap-6">
+                        {/* Code Editor */}
+                        <div className="flex-1 bg-[#111119] border border-gray-800 rounded-lg overflow-hidden relative">
+                            <div className="p-4 border-b border-gray-800">
+                                <h3 className="text-lg font-semibold flex items-center">
+                                    <svg className="h-5 w-5 mr-2 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                                    </svg>
+                                    Code Editor
+                                </h3>
+                            </div>
+                            <div className="h-[400px] overflow-y-auto"> {/* SCROLLABLE CONTAINER */}
+                                <CodeMirror
+                                    value={code}
+                                    height="100%"
+                                    theme="dark"
+                                    extensions={[
+                                        languageExtensions[language](),
+                                        blameTooltipExtension,
+                                        lineBlameTooltipExtension,
+                                        commentGutter
+                                    ]}
+                                    onChange={handleCodeChange}
+                                />
+                            </div>
+
+                            {/* New comment form */}
+                            {newCommentLine !== null && (
+                                <div
+                                    className="absolute bg-[#111119] border border-gray-700 rounded-lg shadow-lg p-4 z-10"
+                                    style={{
+                                        top: `${(newCommentLine + 1) * 21 + 64}px`,
+                                        right: "20px",
+                                        transform: 'translateY(-50%)',
+                                        width: '280px',
+                                        maxHeight: '80vh',
+                                        overflowY: 'auto'
+                                    }}>
+                                    <textarea
+                                        ref={commentInputRef}
+                                        className="w-full p-3 bg-[#1a1a23] border border-gray-700 rounded-lg resize-none text-sm focus:outline-none focus:ring-2 focus:ring-violet-600 text-white placeholder-gray-400"
+                                        rows="3"
+                                        value={newCommentText}
+                                        onChange={(e) => setNewCommentText(e.target.value)}
+                                        placeholder="Add a comment..."
+                                    ></textarea>
+                                    <div className="flex justify-end mt-3 gap-2">
+                                        <button
+                                            className="px-3 py-1 text-sm bg-transparent text-gray-400 hover:text-white rounded-lg transition-colors"
+                                            onClick={() => setNewCommentLine(null)}
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            className="px-3 py-1 text-sm bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg hover:from-violet-700 hover:to-purple-700 transition-colors"
+                                            onClick={handleAddComment}
+                                        >
+                                            Comment
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Comment thread view */}
+                            {activeComment !== null && comments[activeComment] && (
+                                <div
+                                    className="absolute bg-[#111119] border border-gray-700 rounded-lg shadow-lg p-4 z-10 overflow-y-auto"
+                                    style={{
+                                        ...calculateCommentPosition(activeComment),
+                                        right: "20px",
+                                        width: '320px',
+                                        maxHeight: '80vh',
+                                        maxWidth: '90vw'
+                                    }}>
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-sm font-medium text-white">Comments on line {activeComment + 1}</h3>
+                                        <button
+                                            className="p-1 text-gray-400 hover:text-white rounded transition-colors"
+                                            onClick={() => setActiveComment(null)}
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+
+                                    {Object.entries(comments[activeComment]).map(([commentId, comment]) => (
+                                        <div key={commentId} className="mb-4 p-3 bg-[#1a1a23] border border-gray-700 rounded-lg">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <img src={comment.userPhoto} alt={comment.userName} className="w-6 h-6 rounded-full" />
+                                                <div>
+                                                    <div className="text-sm font-medium">{comment.userName}</div>
+                                                    <div className="text-xs text-gray-400">
+                                                        {new Date(comment.timestamp).toLocaleString()}
+                                                    </div>
+                                                </div>
+
+                                                {comment.userId === auth.currentUser.uid && (
+                                                    <button
+                                                        className="ml-auto text-xs text-gray-400 hover:text-red-400 transition-colors"
+                                                        onClick={() => handleDeleteComment(activeComment, commentId)}
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            <p className="text-sm mb-3">{comment.text}</p>
+
+                                            {/* Replies section */}
+                                            {comment.replies && Object.entries(comment.replies).length > 0 && (
+                                                <div className="pl-3 border-l border-gray-600 mt-3 space-y-3">
+                                                    {Object.entries(comment.replies).map(([replyId, reply]) => (
+                                                        <div key={replyId} className="bg-[#2a2a35] p-2 rounded">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <img src={reply.userPhoto} alt={reply.userName} className="w-4 h-4 rounded-full" />
+                                                                <div className="text-xs font-medium">{reply.userName}</div>
+                                                                <div className="text-xs text-gray-400">
+                                                                    {new Date(reply.timestamp).toLocaleString()}
+                                                                </div>
+
+                                                                {reply.userId === auth.currentUser.uid && (
+                                                                    <button
+                                                                        className="ml-auto text-xs text-gray-400 hover:text-red-400 transition-colors"
+                                                                        onClick={() => handleDeleteReply(activeComment, commentId, replyId)}
+                                                                    >
+                                                                        Delete
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-xs">{reply.text}</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* Reply input */}
+                                            <div className="mt-3 flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    className="flex-1 p-2 text-xs bg-[#2a2a35] border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-violet-600 text-white placeholder-gray-400"
+                                                    placeholder="Add a reply..."
+                                                    value={newReplyText}
+                                                    onChange={(e) => setNewReplyText(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                                            e.preventDefault();
+                                                            handleAddReply(activeComment, commentId);
+                                                        }
+                                                    }}
+                                                />
+                                                <button
+                                                    className="px-3 py-1 text-xs bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded hover:from-violet-700 hover:to-purple-700 transition-colors"
+                                                    onClick={() => handleAddReply(activeComment, commentId)}
+                                                >
+                                                    Reply
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    <button
+                                        className="w-full py-2 text-xs bg-[#1a1a23] hover:bg-[#2a2a35] text-white rounded-lg mt-2 border border-gray-700 transition-colors"
+                                        onClick={() => handleStartComment(activeComment)}
+                                    >
+                                        Add another comment
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Input Section */}
+                        <div className="h-48 bg-[#111119] border border-gray-800 rounded-lg overflow-hidden">
+                            <div className="p-4 border-b border-gray-800">
+                                <h3 className="text-lg font-semibold flex items-center">
+                                    <svg className="h-5 w-5 mr-2 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                                    </svg>
+                                    Input
+                                </h3>
+                            </div>
+                            <textarea
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                className="w-full h-[calc(100%-4rem)] p-4 bg-transparent text-white resize-none focus:outline-none placeholder-gray-400"
+                                placeholder="Enter input here..."
+                            />
+                        </div>
                     </div>
-                    <div className="flex-1 card overflow-hidden">
-                        <h3 className="text-lg font-medium mb-2">Output</h3>
-                        <pre className="whitespace-pre-wrap h-[calc(100%-2rem)] overflow-auto">
-                            {output}
-                        </pre>
+
+
+                    {/* Right Panel - Controls and Output */}
+                    <div className="flex flex-col gap-6">
+                        {/* Run Button */}
+                        <div className="bg-[#111119] border border-gray-800 rounded-lg p-4">
+                            <button
+                                onClick={executeCode}
+                                disabled={isExecuting}
+                                className="w-full px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg hover:from-violet-700 hover:to-purple-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                            >
+                                {isExecuting ? (
+                                    <>
+                                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Executing...
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 10a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Run Code
+                                    </>
+                                )}
+                            </button>
+                        </div>
+
+                        {/* Output Section */}
+                        <div className="flex-1 bg-[#111119] border border-gray-800 rounded-lg flex flex-col overflow-hidden">
+                            <div className="p-4 border-b border-gray-800 flex-shrink-0">
+                                <h3 className="text-lg font-semibold flex items-center">
+                                    <svg className="h-5 w-5 mr-2 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    Output
+                                </h3>
+                            </div>
+                            <div className="flex-1 overflow-hidden">
+                                <pre className="custom-scrollbar p-4 text-sm text-gray-300 whitespace-pre-wrap h-full overflow-y-auto bg-[#0a0a0f] font-mono">
+                                    {output || "Run your code to see the output here..."}
+                                </pre>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -778,3 +863,4 @@ const CodeEditor = () => {
 };
 
 export default CodeEditor;
+
