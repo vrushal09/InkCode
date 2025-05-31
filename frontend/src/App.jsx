@@ -44,6 +44,10 @@ function App() {
             element={user ? <Navigate to="/dashboard" /> : <Auth />} 
           />
           <Route 
+            path="/auth" 
+            element={<Auth />} 
+          />
+          <Route 
             path="/dashboard" 
             element={user ? <Dashboard /> : <Navigate to="/" />} 
           />

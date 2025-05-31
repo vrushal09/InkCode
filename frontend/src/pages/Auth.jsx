@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { auth } from '../config/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { toast } from 'react-toastify';
 
 const Auth = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isLogin, setIsLogin] = useState(false); // Default to signup
   const [formData, setFormData] = useState({
     email: '',
@@ -12,6 +15,30 @@ const Auth = () => {
   });
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Handle redirect after authentication
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        // Get redirect parameters
+        const redirectPath = searchParams.get('redirect');
+        const token = searchParams.get('token');
+        
+        if (redirectPath && token) {
+          // Redirect back to the invitation page with the token
+          navigate(`${redirectPath}?token=${token}`);
+        } else if (redirectPath) {
+          // Redirect to the specified path
+          navigate(redirectPath);
+        } else {
+          // Default redirect to dashboard
+          navigate('/dashboard');
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [navigate, searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -123,13 +150,27 @@ const Auth = () => {
 
       {/* Right section with form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
-          <h1 className="text-2xl font-semibold text-white mb-2">
+        <div className="w-full max-w-md">          <h1 className="text-2xl font-semibold text-white mb-2">
             {isLogin ? 'Log In' : 'Sign Up An Account'}
           </h1>
           <p className="text-gray-400 text-sm mb-6">
             {isLogin ? 'Welcome back!' : 'Enter personal data to create your account'}
           </p>
+
+          {/* Show invitation notice if user came from invitation link */}
+          {searchParams.get('redirect') && searchParams.get('token') && (
+            <div className="mb-6 p-4 bg-violet-500/10 border border-violet-500/20 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <svg className="h-5 w-5 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span className="text-violet-400 font-medium text-sm">Team Invitation</span>
+              </div>
+              <p className="text-gray-300 text-sm">
+                You're signing in to accept a team invitation. After authentication, you'll be redirected back to join your team.
+              </p>
+            </div>
+          )}
 
           {/* OAuth buttons - keeping only Google */}
           <div className="flex mb-6">
