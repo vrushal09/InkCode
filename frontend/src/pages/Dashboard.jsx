@@ -171,10 +171,11 @@ const Dashboard = () => {
     
     if (!window.confirm('Are you sure you want to delete this project? This will remove it for all team members.')) {
       return;
-    }
-
-    try {
-      // Remove project from projects collection
+    }    try {
+      // Get project data before deletion to access invitations
+      const project = projects.find(p => p.id === projectId);
+      
+      // Remove project from projects collection (this also removes project invitations)
       const projectRef = ref(database, `projects/${projectId}`);
       await remove(projectRef);
 
@@ -183,13 +184,26 @@ const Dashboard = () => {
       await remove(roomRef);
 
       // Remove project from all team members' user projects
-      const project = projects.find(p => p.id === projectId);
       if (project?.teamMembers) {
         const removePromises = Object.keys(project.teamMembers).map(userId => {
           const userProjectRef = ref(database, `users/${userId}/projects/${projectId}`);
           return remove(userProjectRef);
         });
         await Promise.all(removePromises);
+      }
+
+      // Clean up any pending global invitations for this project
+      if (project?.invitations) {
+        const globalInviteCleanup = Object.values(project.invitations).map(invitation => {
+          if (invitation.token) {
+            const globalInviteRef = ref(database, `invitations/${invitation.token}`);
+            return remove(globalInviteRef);
+          }
+        }).filter(Boolean); // Remove undefined entries
+        
+        if (globalInviteCleanup.length > 0) {
+          await Promise.all(globalInviteCleanup);
+        }
       }
 
       toast.success('Project deleted successfully');

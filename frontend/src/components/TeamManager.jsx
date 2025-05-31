@@ -135,21 +135,58 @@ const TeamManager = ({ projectId, isOpen, onClose }) => {
         } finally {
             setLoading(false);
         }
-    };
-
-    const removeMember = async (userId) => {
+    };    const removeMember = async (userId) => {
         if (userId === auth.currentUser.uid) {
             toast.error("You cannot remove yourself from the team");
             return;
         }
 
         try {
+            // Remove user from project team members
             const memberRef = ref(database, `projects/${projectId}/teamMembers/${userId}`);
-            await remove(memberRef);
+            
+            // Remove project from user's personal projects list
+            const userProjectRef = ref(database, `users/${userId}/projects/${projectId}`);
+            
+            // Execute both removals
+            await Promise.all([
+                remove(memberRef),
+                remove(userProjectRef)
+            ]);
+            
             toast.success('Team member removed successfully');
         } catch (error) {
             console.error('Error removing member:', error);
             toast.error('Failed to remove team member');
+        }
+    };const leaveTeam = async () => {
+        if (isProjectOwner) {
+            toast.error("As the project owner, you cannot leave the team. Transfer ownership first or delete the project.");
+            return;
+        }
+
+        if (window.confirm("Are you sure you want to leave this team? You'll lose access to this project.")) {
+            try {
+                // Remove user from project team members
+                const memberRef = ref(database, `projects/${projectId}/teamMembers/${auth.currentUser.uid}`);
+                
+                // Remove project from user's personal projects list
+                const userProjectRef = ref(database, `users/${auth.currentUser.uid}/projects/${projectId}`);
+                
+                // Execute both removals
+                await Promise.all([
+                    remove(memberRef),
+                    remove(userProjectRef)
+                ]);
+                
+                toast.success('You have left the team successfully');
+                onClose(); // Close the modal after leaving
+                // You might want to redirect to dashboard here
+                window.location.href = '/dashboard';
+            } catch (error) {
+                console.error('Error leaving team:', error);
+                toast.error('Failed to leave team');
+            }
         }
     };
 
@@ -311,7 +348,21 @@ const TeamManager = ({ projectId, isOpen, onClose }) => {
                                     )}
                                 </div>
                             ))}
-                        </div>
+                        </div>                    </div>
+                )}
+
+                {/* Leave Team Option for Non-Owners */}
+                {!isProjectOwner && (
+                    <div className="mt-6 pt-6 border-t border-gray-700">
+                        <button
+                            onClick={leaveTeam}
+                            className="w-full px-4 py-2 bg-red-600/20 text-red-400 border border-red-600/30 rounded-lg hover:bg-red-600/30 transition-colors"
+                        >
+                            Leave Team
+                        </button>
+                        <p className="text-xs text-gray-500 mt-2 text-center">
+                            You will lose access to this project and all its contents.
+                        </p>
                     </div>
                 )}
             </div>
