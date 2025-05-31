@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../config/firebase';
-import { updateProfile, updateEmail, updatePassword, signOut } from 'firebase/auth';
+import { updateProfile, updateEmail, updatePassword, signOut, deleteUser } from 'firebase/auth';
 import { toast } from 'react-toastify';
 
 const Profile = () => {
@@ -64,6 +64,32 @@ const Profile = () => {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    const confirmText = 'DELETE';
+    const userInput = prompt(
+      `This action cannot be undone. This will permanently delete your account and all associated data.\n\nType "${confirmText}" to confirm account deletion:`
+    );
+    
+    if (userInput === confirmText) {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          await deleteUser(user);
+          navigate('/');
+          toast.success('Account deleted successfully');
+        }
+      } catch (error) {
+        if (error.code === 'auth/requires-recent-login') {
+          toast.error('For security reasons, please log out and log back in before deleting your account.');
+        } else {
+          toast.error('Failed to delete account: ' + error.message);
+        }
+      }
+    } else if (userInput !== null) {
+      toast.error('Account deletion cancelled - confirmation text did not match');
+    }
+  };
+
   const togglePasswordVisibility = (field) => {
     switch (field) {
       case 'current':
@@ -97,16 +123,28 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Back Button */}
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="flex items-center space-x-2 px-4 py-2 bg-[#1a1a23] text-gray-300 border border-gray-700 rounded-lg hover:bg-[#2a2a35] hover:text-white transition-colors text-sm font-medium"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              <span>Back to Dashboard</span>
-            </button>
+            {/* Header Actions */}
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white border border-gray-500 rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span>Logout</span>
+              </button>
+              
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="flex items-center space-x-2 px-4 py-2 bg-[#1a1a23] text-gray-300 border border-gray-700 rounded-lg hover:bg-[#2a2a35] hover:text-white transition-colors text-sm font-medium"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                <span>Back to Dashboard</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -320,15 +358,18 @@ const Profile = () => {
                 </svg>
                 Danger Zone
               </h2>
-              <p className="text-gray-400 mb-4">
-                Once you logout, you'll need to sign in again to access your account.
-              </p>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
-              >
-                Logout Account
-              </button>
+              
+              <div>
+                <p className="text-gray-400 mb-3">
+                  <strong className="text-red-400">Warning:</strong> This action cannot be undone. This will permanently delete your account and all associated data.
+                </p>
+                <button
+                  onClick={handleDeleteAccount}
+                  className="px-4 py-2.5 bg-red-800 text-white rounded-lg hover:bg-red-900 transition-colors font-medium border border-red-600"
+                >
+                  Delete Account
+                </button>
+              </div>
             </div>
           </div>
         </div>
