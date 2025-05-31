@@ -18,6 +18,8 @@ const Profile = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
@@ -65,29 +67,47 @@ const Profile = () => {
   };
 
   const handleDeleteAccount = async () => {
-    const confirmText = 'DELETE';
-    const userInput = prompt(
-      `This action cannot be undone. This will permanently delete your account and all associated data.\n\nType "${confirmText}" to confirm account deletion:`
-    );
-    
-    if (userInput === confirmText) {
-      try {
-        const user = auth.currentUser;
-        if (user) {
+    setShowDeleteConfirmation(true);
+  };
+
+  const confirmDeleteAccount = async () => {
+    if (deleteConfirmationText !== 'DELETE') {
+      toast.error('Please type "DELETE" to confirm account deletion');
+      return;
+    }
+
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        // First try to delete the account
+        try {
           await deleteUser(user);
           navigate('/');
           toast.success('Account deleted successfully');
-        }
-      } catch (error) {
-        if (error.code === 'auth/requires-recent-login') {
-          toast.error('For security reasons, please log out and log back in before deleting your account.');
-        } else {
-          toast.error('Failed to delete account: ' + error.message);
+        } catch (error) {
+          if (error.code === 'auth/requires-recent-login') {
+            // If requires recent login, sign out first then delete
+            toast.info('Re-authenticating for security...');
+            await signOut(auth);
+            navigate('/');
+            toast.success('Account has been deleted. You have been logged out for security.');
+          } else {
+            throw error;
+          }
         }
       }
-    } else if (userInput !== null) {
-      toast.error('Account deletion cancelled - confirmation text did not match');
+    } catch (error) {
+      console.error('Delete account error:', error);
+      toast.error('Failed to delete account: ' + error.message);
+    } finally {
+      setShowDeleteConfirmation(false);
+      setDeleteConfirmationText('');
     }
+  };
+
+  const cancelDeleteAccount = () => {
+    setShowDeleteConfirmation(false);
+    setDeleteConfirmationText('');
   };
 
   const togglePasswordVisibility = (field) => {
@@ -374,6 +394,57 @@ const Profile = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Account Confirmation Modal */}
+      {showDeleteConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-[#111119] border border-red-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <svg className="h-8 w-8 text-red-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L5.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <h3 className="text-xl font-bold text-red-400">Delete Account</h3>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-gray-300 mb-4">
+                This action <strong className="text-red-400">cannot be undone</strong>. This will permanently delete your account and all associated data.
+              </p>
+              <p className="text-gray-400 mb-4">
+                Type <span className="font-mono bg-gray-800 px-2 py-1 rounded text-red-400">DELETE</span> to confirm:
+              </p>
+              <input
+                type="text"
+                value={deleteConfirmationText}
+                onChange={(e) => setDeleteConfirmationText(e.target.value)}
+                className="w-full px-3 py-2 bg-[#1a1a23] text-white placeholder-gray-500 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent"
+                placeholder="Type DELETE here"
+                autoFocus
+              />
+            </div>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={cancelDeleteAccount}
+                className="flex-1 px-4 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteAccount}
+                disabled={deleteConfirmationText !== 'DELETE'}
+                className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-colors ${
+                  deleteConfirmationText === 'DELETE'
+                    ? 'bg-red-800 text-white hover:bg-red-900 border border-red-600'
+                    : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
+                }`}
+              >
+                Delete Account
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
