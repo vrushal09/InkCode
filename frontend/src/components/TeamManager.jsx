@@ -117,27 +117,12 @@ const TeamManager = ({ projectId, isOpen, onClose }) => {
                 } else {
                     toast.success(result.message, { autoClose: 6000 });
                 }
-                
-                // Also log delivery info for debugging
+                  // Also log delivery info for debugging
                 console.log('Invitation sent successfully:', {
                     recipient: emailToInvite,
                     inviteLink: inviteLink,
                     deliveryInfo: result.deliveryInfo
                 });
-                
-                // Always show the link as backup
-                setTimeout(() => {
-                    toast.info(
-                        `📎 Backup invitation link (in case email doesn't arrive):\n${inviteLink}\n\nClick to copy to clipboard`,
-                        { 
-                            autoClose: 10000,
-                            onClick: () => {
-                                navigator.clipboard.writeText(inviteLink);
-                                toast.success('Link copied to clipboard!');
-                            }
-                        }
-                    );
-                }, 2000);
             } else {
                 toast.error(result.message || 'Failed to send invitation');
                 console.error('Invitation failed:', result.error);
