@@ -9,31 +9,9 @@ import TeamManager from '../components/TeamManager';
 const PROGRAMMING_LANGUAGES = [
   'javascript',
   'python',
-  'java',
   'cpp',
   'c',
-  'csharp',
-  'go',
-  'rust',
-  'typescript',
-  'php',
-  'ruby',
-  'swift',
-  'kotlin',
-  'scala',
-  'dart',
-  'r',
-  'perl',
-  'lua',
-  'bash',
-  'powershell',
-  'sql',
-  'html',
-  'css',
-  'json',
-  'xml',
-  'yaml',
-  'markdown'
+  'typescript'
 ];
 
 const Dashboard = () => {
@@ -167,37 +145,14 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error creating project:', error);
       toast.error('Failed to create project');
-    }
-  };
+    }  };
   const getStarterCode = (language) => {
     const starterCodes = {
       javascript: '// Welcome to your new JavaScript project\nconsole.log("Hello, World!");',
       python: '# Welcome to your new Python project\nprint("Hello, World!")',
-      java: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}',
       cpp: '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello, World!" << endl;\n    return 0;\n}',
       c: '#include <stdio.h>\n\nint main() {\n    printf("Hello, World!\\n");\n    return 0;\n}',
-      csharp: 'using System;\n\nclass Program {\n    static void Main() {\n        Console.WriteLine("Hello, World!");\n    }\n}',
-      go: 'package main\n\nimport "fmt"\n\nfunc main() {\n    fmt.Println("Hello, World!")\n}',
-      rust: 'fn main() {\n    println!("Hello, World!");\n}',
-      typescript: '// Welcome to your new TypeScript project\nconsole.log("Hello, World!");',
-      php: '<?php\n// Welcome to your new PHP project\necho "Hello, World!\\n";\n?>',
-      ruby: '# Welcome to your new Ruby project\nputs "Hello, World!"',
-      swift: 'import Foundation\n\n// Welcome to your new Swift project\nprint("Hello, World!")',
-      kotlin: 'fun main() {\n    println("Hello, World!")\n}',
-      scala: 'object Main {\n    def main(args: Array[String]): Unit = {\n        println("Hello, World!")\n    }\n}',
-      dart: 'void main() {\n  print("Hello, World!");\n}',
-      r: '# Welcome to your new R project\nprint("Hello, World!")',
-      perl: '#!/usr/bin/perl\n# Welcome to your new Perl project\nprint "Hello, World!\\n";',
-      lua: '-- Welcome to your new Lua project\nprint("Hello, World!")',
-      bash: '#!/bin/bash\n# Welcome to your new Bash script\necho "Hello, World!"',
-      powershell: '# Welcome to your new PowerShell script\nWrite-Host "Hello, World!"',
-      sql: '-- Welcome to your new SQL project\nSELECT \'Hello, World!\' AS greeting;',
-      html: '<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>Hello World</title>\n</head>\n<body>\n    <h1>Hello, World!</h1>\n</body>\n</html>',
-      css: '/* Welcome to your new CSS project */\nbody {\n    font-family: Arial, sans-serif;\n    text-align: center;\n    margin-top: 50px;\n}\n\nh1 {\n    color: #8b5cf6;\n    font-size: 2rem;\n}',
-      json: '{\n  "message": "Hello, World!",\n  "language": "JSON",\n  "project": "InkCode"\n}',
-      xml: '<?xml version="1.0" encoding="UTF-8"?>\n<root>\n    <message>Hello, World!</message>\n    <language>XML</language>\n</root>',
-      yaml: '# Welcome to your new YAML project\nmessage: "Hello, World!"\nlanguage: YAML\nproject: InkCode',
-      markdown: '# Hello, World!\n\nWelcome to your new **Markdown** project!\n\n## Features\n- Easy formatting\n- Great for documentation\n- Widely supported\n\n> Start writing your content here!'
+      typescript: '// Welcome to your new TypeScript project\nconsole.log("Hello, World!");'
     };
     return starterCodes[language] || '// Start coding here\n';
   };
@@ -256,36 +211,13 @@ const Dashboard = () => {
       console.error('Error deleting project:', error);
       toast.error('Failed to delete project');
     }
-  };
-  const getLanguageIcon = (language) => {
+  };  const getLanguageIcon = (language) => {
     const icons = {
       javascript: '🟨',
       python: '🐍',
-      java: '☕',
       cpp: '⚡',
       c: '🔧',
-      csharp: '🔷',
-      go: '🐹',
-      rust: '🦀',
-      typescript: '🔷',
-      php: '🐘',
-      ruby: '💎',
-      swift: '🍎',
-      kotlin: '🎯',
-      scala: '⚖️',
-      dart: '🎯',
-      r: '📊',
-      perl: '🐪',
-      lua: '🌙',
-      bash: '🐚',
-      powershell: '💙',
-      sql: '🗃️',
-      html: '🌐',
-      css: '🎨',
-      json: '📋',
-      xml: '📄',
-      yaml: '📝',
-      markdown: '📝'
+      typescript: '🔷'
     };
     return icons[language] || '📄';
   };
