@@ -192,28 +192,42 @@ const CodeEditor = () => {
                 setCode(data.code || "");
                 setLanguage(data.language || "javascript");
             }
-        });
-
-        // Track collaborators and creator
+        });        // Track collaborators and project info
         const roomDetailsRef = ref(database, `rooms/${roomId}`);
-        const roomDetailsUnsubscribe = onValue(roomDetailsRef, (snapshot) => {
+        const roomDetailsUnsubscribe = onValue(roomDetailsRef, async (snapshot) => {
             const data = snapshot.val() || {};
-            const creatorId = data.createdBy;
+            const projectId = data.projectId;
+            
+            if (projectId) {
+                // Load team members from project
+                const projectRef = ref(database, `projects/${projectId}/teamMembers`);
+                const teamUnsubscribe = onValue(projectRef, (teamSnapshot) => {
+                    const teamData = teamSnapshot.val() || {};
+                    const teamList = Object.values(teamData).map((member) => ({
+                        ...member,
+                        id: member.userId,
+                        isCreator: member.role === 'owner',
+                        lastActive: Date.now() // You can track this more precisely
+                    }));
+                    setCollaborators(teamList);
+                });
 
-            const collaboratorsRef = ref(database, `rooms/${roomId}/collaborators`);
-            const collaboratorUnsubscribe = onValue(collaboratorsRef, (snapshot) => {
-                const collaboratorsData = snapshot.val() || {};
-                const collaboratorsList = Object.values(collaboratorsData).map((user) => ({
-                    ...user,
-                    isCreator: user.id === creatorId,
-                }));
-                setCollaborators(collaboratorsList);
-            });
+                return () => teamUnsubscribe();
+            } else {
+                // Fallback to old room-based collaborators
+                const collaboratorsRef = ref(database, `rooms/${roomId}/collaborators`);
+                const collaboratorUnsubscribe = onValue(collaboratorsRef, (snapshot) => {
+                    const collaboratorsData = snapshot.val() || {};
+                    const collaboratorsList = Object.values(collaboratorsData).map((user) => ({
+                        ...user,
+                        isCreator: user.id === data.createdBy,
+                    }));
+                    setCollaborators(collaboratorsList);
+                });
 
-            return () => collaboratorUnsubscribe();
-        });
-
-        // Add current user to collaborators
+                return () => collaboratorUnsubscribe();
+            }
+        });        // Add current user to collaborators (for backward compatibility with old rooms)
         const userRef = ref(database, `rooms/${roomId}/collaborators/${auth.currentUser.uid}`);
         set(userRef, {
             id: auth.currentUser.uid,
@@ -682,8 +696,7 @@ const CodeEditor = () => {
             {/* Header */}
             <div className="bg-[#111119] border-b border-gray-800 sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-6 py-4">
-                    <div className="flex items-center justify-between">
-                        {/* Logo and Room Info */}
+                    <div className="flex items-center justify-between">                        {/* Logo and Project Info */}
                         <div className="flex items-center space-x-4">
                             <div className="flex items-center space-x-3">
                                 <div className="w-8 h-8 bg-gradient-to-r from-violet-600 to-purple-600 rounded-lg flex items-center justify-center">
@@ -691,7 +704,7 @@ const CodeEditor = () => {
                                 </div>
                                 <div>
                                     <h1 className="text-xl font-bold">Code Editor</h1>
-                                    <p className="text-xs text-gray-400">Room: {roomId}</p>
+                                    <p className="text-xs text-gray-400">Team Collaboration</p>
                                 </div>
                             </div>
                         </div>
@@ -786,8 +799,7 @@ const CodeEditor = () => {
                         <div className="flex items-center gap-2">
                             <svg className="h-5 w-5 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
-                            <h3 className="text-lg font-semibold">Room Chat</h3>
+                            </svg>                            <h3 className="text-lg font-semibold">Team Chat</h3>
                             <span className="text-xs text-gray-400">({collaborators.length} online)</span>
                         </div>
                         <button

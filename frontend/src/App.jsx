@@ -9,6 +9,7 @@ import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
 import CodeEditor from './pages/CodeEditor';
 import Profile from './pages/Profile';
+import JoinTeam from './pages/JoinTeam';
 
 // Styles
 import 'react-toastify/dist/ReactToastify.css';
@@ -53,6 +54,10 @@ function App() {
           <Route 
             path="/profile" 
             element={user ? <Profile /> : <Navigate to="/" />} 
+          />
+          <Route 
+            path="/join-team" 
+            element={<JoinTeam />} 
           />
         </Routes>
         <ToastContainer 

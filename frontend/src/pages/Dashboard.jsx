@@ -4,6 +4,7 @@ import { auth, database } from '../config/firebase';
 import { ref, push, set, onValue, query, orderByChild, limitToLast, get, remove } from 'firebase/database';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'react-toastify';
+import TeamManager from '../components/TeamManager';
 
 const PROGRAMMING_LANGUAGES = [
   'javascript',
@@ -15,41 +16,52 @@ const PROGRAMMING_LANGUAGES = [
 const Dashboard = () => {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [newProject, setNewProject] = useState({
     name: '',
     language: 'javascript'
   });
-  const [roomIdToJoin, setRoomIdToJoin] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
-
   useEffect(() => {
-    const userProjectsRef = query(
-      ref(database, `users/${auth.currentUser.uid}/projects`),
-      orderByChild('timestamp'),
-      limitToLast(50)
-    );
+    const loadProjects = async () => {
+      try {
+        // Load user's own projects
+        const userProjectsRef = ref(database, `users/${auth.currentUser.uid}/projects`);
+        const userProjectsSnap = await get(userProjectsRef);
+        const userProjectIds = userProjectsSnap.exists() ? Object.keys(userProjectsSnap.val()) : [];
 
-    const unsubscribe = onValue(userProjectsRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const projectsList = Object.entries(data).map(([key, value]) => ({
-          id: key,
-          ...value
-        })).reverse();
-        setProjects(projectsList);
-        setFilteredProjects(projectsList);
-      } else {
-        setProjects([]);
-        setFilteredProjects([]);
+        // Load projects created by user
+        const createdProjectsRef = ref(database, 'projects');
+        const createdProjectsUnsubscribe = onValue(createdProjectsRef, async (snapshot) => {
+          const data = snapshot.val() || {};
+          const allProjects = Object.entries(data).map(([id, project]) => ({
+            id,
+            ...project
+          }));
+
+          // Filter projects where user is creator or team member
+          const userProjects = allProjects.filter(project => 
+            project.createdBy === auth.currentUser.uid || userProjectIds.includes(project.id)
+          );
+
+          setProjects(userProjects);
+        });
+
+        return () => createdProjectsUnsubscribe();
+      } catch (error) {
+        console.error('Error loading projects:', error);
+        toast.error('Failed to load projects');
       }
-    });
+    };
 
-    return () => unsubscribe();
+    if (auth.currentUser) {
+      loadProjects();
+    }
   }, []);
 
   // Filter and search projects
@@ -80,12 +92,32 @@ const Dashboard = () => {
 
     setFilteredProjects(filtered);
   }, [projects, searchQuery, selectedLanguage, sortBy]);
-
   const handleCreateProject = async (e) => {
     e.preventDefault();
     try {
+      const projectId = uuidv4();
       const roomId = uuidv4();
       
+      // Create project in projects collection
+      const projectRef = ref(database, `projects/${projectId}`);
+      await set(projectRef, {
+        name: newProject.name,
+        language: newProject.language,
+        createdAt: Date.now(),
+        createdBy: auth.currentUser.uid,
+        roomId,
+        teamMembers: {
+          [auth.currentUser.uid]: {
+            userId: auth.currentUser.uid,
+            name: auth.currentUser.displayName || 'Unknown',
+            email: auth.currentUser.email,
+            photoURL: auth.currentUser.photoURL || `https://api.dicebear.com/7.x/avatars/svg?seed=${auth.currentUser.uid}`,
+            role: 'owner',
+            joinedAt: Date.now()
+          }
+        }
+      });
+
       // Create room in rooms collection
       const roomRef = ref(database, `rooms/${roomId}`);
       await set(roomRef, {
@@ -93,17 +125,16 @@ const Dashboard = () => {
         language: newProject.language,
         createdAt: Date.now(),
         createdBy: auth.currentUser.uid,
+        projectId,
         code: getStarterCode(newProject.language)
       });
 
-      // Add project reference to user's projects
-      const projectRef = ref(database, `users/${auth.currentUser.uid}/projects`);
-      const newProjectRef = push(projectRef);
-      await set(newProjectRef, {
-        name: newProject.name,
-        language: newProject.language,
-        roomId,
-        timestamp: Date.now()
+      // Add project to user's projects list
+      const userProjectRef = ref(database, `users/${auth.currentUser.uid}/projects/${projectId}`);
+      await set(userProjectRef, {
+        projectId,
+        joinedAt: Date.now(),
+        role: 'owner'
       });
 
       setIsModalOpen(false);
@@ -111,6 +142,7 @@ const Dashboard = () => {
       navigate(`/editor/${roomId}`);
       toast.success('Project created successfully!');
     } catch (error) {
+      console.error('Error creating project:', error);
       toast.error('Failed to create project');
     }
   };
@@ -124,53 +156,40 @@ const Dashboard = () => {
     };
     return starterCodes[language] || '// Start coding here\n';
   };
-
   const joinRoom = (roomId) => {
     navigate(`/editor/${roomId}`);
   };
 
-  const handleJoinRoom = async (e) => {
-    e.preventDefault();
-    if (!roomIdToJoin.trim()) {
-      toast.error('Please enter a Room ID');
-      return;
-    }
-
-    try {
-      const roomRef = ref(database, `rooms/${roomIdToJoin}`);
-      const snapshot = await get(roomRef);
-
-      if (!snapshot.exists()) {
-        toast.error('Room not found');
-        return;
-      }
-
-      setIsJoinModalOpen(false);
-      setRoomIdToJoin('');
-      navigate(`/editor/${roomIdToJoin}`);
-    } catch (error) {
-      toast.error('Failed to join room');
-    }
+  const openTeamManager = (e, projectId) => {
+    e.stopPropagation();
+    setSelectedProjectId(projectId);
+    setIsTeamModalOpen(true);
   };
 
   const handleDeleteProject = async (e, projectId, roomId) => {
     e.stopPropagation();
     
-    if (!window.confirm('Are you sure you want to delete this project?')) {
+    if (!window.confirm('Are you sure you want to delete this project? This will remove it for all team members.')) {
       return;
     }
 
     try {
-      // Remove project from user's projects
-      const projectRef = ref(database, `users/${auth.currentUser.uid}/projects/${projectId}`);
+      // Remove project from projects collection
+      const projectRef = ref(database, `projects/${projectId}`);
       await remove(projectRef);
 
-      // Optionally remove the room if the current user is the creator
+      // Remove the associated room
       const roomRef = ref(database, `rooms/${roomId}`);
-      const roomSnapshot = await get(roomRef);
-      
-      if (roomSnapshot.exists() && roomSnapshot.val().createdBy === auth.currentUser.uid) {
-        await remove(roomRef);
+      await remove(roomRef);
+
+      // Remove project from all team members' user projects
+      const project = projects.find(p => p.id === projectId);
+      if (project?.teamMembers) {
+        const removePromises = Object.keys(project.teamMembers).map(userId => {
+          const userProjectRef = ref(database, `users/${userId}/projects/${projectId}`);
+          return remove(userProjectRef);
+        });
+        await Promise.all(removePromises);
       }
 
       toast.success('Project deleted successfully');
@@ -270,15 +289,7 @@ const Dashboard = () => {
                 
                 {/* Online status indicator */}
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-[#111119] rounded-full"></div>
-              </button>
-
-              <button
-                onClick={() => setIsJoinModalOpen(true)}
-                className="px-4 py-2 bg-[#1a1a23] text-gray-300 border border-gray-700 rounded-lg hover:bg-[#2a2a35] hover:text-white transition-colors text-sm font-medium"
-              >
-                Join Room
-              </button>
-              <button
+              </button>              <button
                 onClick={() => setIsModalOpen(true)}
                 className="px-4 py-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg hover:from-violet-700 hover:to-purple-700 transition-colors text-sm font-medium"
               >
@@ -392,53 +403,99 @@ const Dashboard = () => {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProjects.map((project) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">            {filteredProjects.map((project) => (
               <div
                 key={project.id}
-                onClick={() => joinRoom(project.roomId)}
-                className="group bg-[#111119] border border-gray-800 rounded-lg p-6 hover:border-violet-600/50 cursor-pointer transition-all duration-200 hover:shadow-lg hover:shadow-violet-600/10"
+                className="group bg-[#111119] border border-gray-800 rounded-lg p-6 hover:border-violet-600/50 transition-all duration-200 hover:shadow-lg hover:shadow-violet-600/10"
               >
                 <div className="flex flex-col h-full">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                    <div 
+                      className="flex items-center space-x-3 flex-1 min-w-0 cursor-pointer"
+                      onClick={() => joinRoom(project.roomId)}
+                    >
                       <div className="text-2xl">{getLanguageIcon(project.language)}</div>
                       <div className="min-w-0 flex-1">
                         <h3 className="text-lg font-semibold truncate group-hover:text-violet-400 transition-colors">
                           {project.name}
                         </h3>
                         <p className="text-sm text-gray-400 capitalize">{project.language}</p>
+                        {project.teamMembers && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            {Object.keys(project.teamMembers).length} team member{Object.keys(project.teamMembers).length !== 1 ? 's' : ''}
+                          </p>
+                        )}
                       </div>
                     </div>
-                    <button
-                      onClick={(e) => handleDeleteProject(e, project.id, project.roomId)}
-                      className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                      title="Delete Project"
-                    >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={(e) => openTeamManager(e, project.id)}
+                        className="p-2 text-gray-400 hover:text-violet-400 hover:bg-violet-500/10 rounded-lg transition-colors"
+                        title="Manage Team"
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                      </button>
+                      {project.createdBy === auth.currentUser.uid && (
+                        <button
+                          onClick={(e) => handleDeleteProject(e, project.id, project.roomId)}
+                          className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                          title="Delete Project"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Team Member Avatars */}
+                  {project.teamMembers && Object.keys(project.teamMembers).length > 0 && (
+                    <div className="flex items-center gap-1 mb-4">
+                      <div className="flex -space-x-2">
+                        {Object.values(project.teamMembers).slice(0, 4).map((member) => (
+                          <img
+                            key={member.userId}
+                            src={member.photoURL}
+                            alt={member.name}
+                            className="w-6 h-6 rounded-full border-2 border-[#111119]"
+                            title={member.name}
+                          />
+                        ))}
+                        {Object.keys(project.teamMembers).length > 4 && (
+                          <div className="w-6 h-6 rounded-full bg-gray-700 border-2 border-[#111119] flex items-center justify-center">
+                            <span className="text-xs text-gray-300">+{Object.keys(project.teamMembers).length - 4}</span>
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-xs text-gray-400 ml-2">
+                        {project.createdBy === auth.currentUser.uid ? 'Owner' : 'Member'}
+                      </span>
+                    </div>
+                  )}
 
                   <div className="flex-1" />
 
                   <div className="flex items-center justify-between text-xs text-gray-400 pt-4 border-t border-gray-800">
-                    <span>{formatDate(project.timestamp)}</span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigator.clipboard.writeText(project.roomId);
-                        toast.success('Room ID copied!');
-                      }}
-                      className="flex items-center space-x-1 text-gray-400 hover:text-violet-400 transition-colors"
-                      title="Copy Room ID"
-                    >
-                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                      <span>Copy ID</span>
-                    </button>
+                    <span>{formatDate(project.createdAt || project.timestamp)}</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(project.roomId);
+                          toast.success('Room ID copied!');
+                        }}
+                        className="flex items-center space-x-1 text-gray-400 hover:text-violet-400 transition-colors"
+                        title="Copy Room ID"
+                      >
+                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        <span>Share</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -500,48 +557,17 @@ const Dashboard = () => {
                 </div>
               </form>
             </div>
-          </div>
-        )}
+          </div>        )}
 
-        {/* Join Room Modal */}
-        {isJoinModalOpen && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-[#111119] border border-gray-800 p-6 rounded-xl w-full max-w-md">
-              <h2 className="text-2xl font-bold mb-6">Join Existing Room</h2>
-              <form onSubmit={handleJoinRoom} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Room ID
-                  </label>
-                  <input
-                    type="text"
-                    className="block w-full px-3 py-2.5 bg-[#1a1a23] text-white placeholder-gray-500 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent"
-                    placeholder="Enter Room ID"
-                    value={roomIdToJoin}
-                    onChange={(e) => setRoomIdToJoin(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setIsJoinModalOpen(false)}
-                    className="flex-1 px-4 py-2.5 bg-[#1a1a23] text-gray-300 border border-gray-700 rounded-lg hover:bg-[#2a2a35] hover:text-white transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg hover:from-violet-700 hover:to-purple-700 transition-colors font-medium"
-                  >
-                    Join Room
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        {/* Team Manager Modal */}
+        <TeamManager
+          projectId={selectedProjectId}
+          isOpen={isTeamModalOpen}
+          onClose={() => {
+            setIsTeamModalOpen(false);
+            setSelectedProjectId(null);
+          }}
+        />
       </div>
     </div>
   );
