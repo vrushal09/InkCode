@@ -98,18 +98,49 @@ const TeamManager = ({ projectId, isOpen, onClose }) => {
                 inviteId
             });            // Create invitation link
             const inviteLink = `${window.location.origin}/join-team?token=${inviteToken}`;
-            
-            // Send invitation email (with fallback to clipboard)
+              // Send invitation email (with fallback to clipboard)
             const currentUser = auth.currentUser;
             const inviterName = currentUser.displayName || currentUser.email || 'A team member';
             const projectName = project?.name || 'InkCode Project';
             
             const result = await sendInvitationEmail(emailToInvite, inviterName, projectName, inviteLink, 'member');
-            
-            if (result.success) {
-                toast.success(result.message);
+              if (result.success) {
+                // Show detailed success message
+                if (result.deliveryInfo) {
+                    toast.success(
+                        `✅ Email sent successfully to ${emailToInvite}!\n` +
+                        `Status: ${result.deliveryInfo.status}\n` +
+                        `Time: ${new Date(result.deliveryInfo.timestamp).toLocaleTimeString()}\n\n` +
+                        `📋 Ask the recipient to check their spam/junk folder if they don't see it in their inbox.`,
+                        { autoClose: 8000 }
+                    );
+                } else {
+                    toast.success(result.message, { autoClose: 6000 });
+                }
+                
+                // Also log delivery info for debugging
+                console.log('Invitation sent successfully:', {
+                    recipient: emailToInvite,
+                    inviteLink: inviteLink,
+                    deliveryInfo: result.deliveryInfo
+                });
+                
+                // Always show the link as backup
+                setTimeout(() => {
+                    toast.info(
+                        `📎 Backup invitation link (in case email doesn't arrive):\n${inviteLink}\n\nClick to copy to clipboard`,
+                        { 
+                            autoClose: 10000,
+                            onClick: () => {
+                                navigator.clipboard.writeText(inviteLink);
+                                toast.success('Link copied to clipboard!');
+                            }
+                        }
+                    );
+                }, 2000);
             } else {
-                toast.error(result.message);
+                toast.error(result.message || 'Failed to send invitation');
+                console.error('Invitation failed:', result.error);
             }
             
             setEmailToInvite('');

@@ -4,7 +4,7 @@ import emailjs from '@emailjs/browser';
 // In Vite, environment variables must be prefixed with VITE_ and accessed via import.meta.env
 const EMAIL_CONFIG = {
     serviceId: import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_yshmkbo',
-    templateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_bckhnet', 
+    templateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_bdmkzjm', 
     publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY || 'ki9V1m-StmNDUywfH'
 };
 
@@ -28,8 +28,17 @@ export const sendTeamInvitationEmail = async (toEmail, inviterName, projectName,
             project_name: projectName,
             invite_link: inviteLink,
             role: role,
-            message: `You've been invited to join the "${projectName}" project as a ${role}. Click the link below to accept the invitation and start collaborating!`
-        };
+            message: `You've been invited to join the "${projectName}" project as a ${role}. Click the link below to accept the invitation and start collaborating!`,
+            reply_to: toEmail // This helps with deliverability
+        };        console.log('📧 Sending email with params:', {
+            serviceId: EMAIL_CONFIG.serviceId,
+            templateId: EMAIL_CONFIG.templateId,
+            toEmail: toEmail,
+            fromName: inviterName,
+            projectName: projectName
+        });
+
+        console.log('📧 Template parameters being sent:', templateParams);
 
         const response = await emailjs.send(
             EMAIL_CONFIG.serviceId,
@@ -37,10 +46,26 @@ export const sendTeamInvitationEmail = async (toEmail, inviterName, projectName,
             templateParams
         );
 
-        console.log('Email sent successfully:', response);
-        return { success: true, response };
+        console.log('EmailJS response:', response);
+        console.log('Email sent to:', toEmail, 'Status:', response.status, 'Text:', response.text);
+        
+        return { 
+            success: true, 
+            response,
+            deliveryInfo: {
+                status: response.status,
+                statusText: response.text,
+                recipient: toEmail,
+                timestamp: new Date().toISOString()
+            }
+        };
     } catch (error) {
         console.error('Failed to send email:', error);
+        console.error('Error details:', {
+            message: error.message,
+            status: error.status,
+            text: error.text
+        });
         return { success: false, error };
     }
 };
