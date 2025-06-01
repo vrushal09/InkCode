@@ -28,12 +28,11 @@ import CursorOverlay from "../CursorOverlay";
 
 const CodeEditorContainer = () => {
     const navigate = useNavigate();
-    const { roomId } = useParams();
-
-    // File system state
+    const { roomId } = useParams();    // File system state
     const [isExplorerCollapsed, setIsExplorerCollapsed] = useState(false);
 
-    // File system hook    const {
+    // File system hook
+    const {
         fileTree,
         activeFile,
         openFiles,
