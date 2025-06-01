@@ -55,12 +55,11 @@ const CursorOverlay = ({ userCursors, editorElement }) => {
                 return (
                     <div
                         key={userId}
-                        className={`absolute collaborative-cursor cursor-fade-in ${isFading ? 'opacity-50' : 'opacity-100'}`}
-                        style={{
+                        className={`absolute collaborative-cursor cursor-fade-in ${isFading ? 'opacity-50' : 'opacity-100'}`}                        style={{
                             left: `${absoluteX}px`,
                             top: `${absoluteY}px`,
                             transform: 'translate(-2px, -2px)',
-                            transition: 'opacity 1s ease-out',
+                            transition: 'left 50ms ease-out, top 50ms ease-out, opacity 1s ease-out',
                         }}
                     >
                         {/* Cursor pointer */}
