@@ -48,7 +48,10 @@ const CodeEditorContainer = () => {
         openFile,
         closeFile,
         setActiveFile
-    } = useFileSystem(roomId);
+    } = useFileSystem(roomId, {
+        // Prevent auto-switching to first file when opening files
+        autoSelectFirstFile: false
+    });
 
     // Custom hooks for different features
     const {
