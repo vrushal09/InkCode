@@ -37,8 +37,8 @@ export const useFileSystem = (roomId) => {
             const data = snapshot.val();
             if (data) {
                 setFileTree(data);
-                // If no active file and there are files, set the first one as active
-                if (!activeFile && Object.keys(data).length > 0) {
+                // Only set first file as active if no files are open
+                if (!activeFile && openFiles.length === 0 && Object.keys(data).length > 0) {
                     const firstFile = findFirstFile(data);
                     if (firstFile) {
                         setActiveFile(firstFile);
