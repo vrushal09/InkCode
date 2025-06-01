@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { auth, database } from "../config/firebase";
 import { ref, onValue, set, push, remove } from "firebase/database";
 import { toast } from "react-toastify";
@@ -8,6 +8,7 @@ export const useFileSystem = (roomId) => {
     const [activeFile, setActiveFile] = useState(null);
     const [openFiles, setOpenFiles] = useState([]);
     const [expandedFolders, setExpandedFolders] = useState(new Set(['root']));
+    const isInitialLoad = useRef(true);
 
     // Helper functions for Firebase-safe keys
     const toFirebaseKey = (name) => {
@@ -32,20 +33,21 @@ export const useFileSystem = (roomId) => {
     useEffect(() => {
         if (!roomId) return;
 
-        const fileSystemRef = ref(database, `rooms/${roomId}/fileSystem`);
-        const unsubscribe = onValue(fileSystemRef, (snapshot) => {
+        const fileSystemRef = ref(database, `rooms/${roomId}/fileSystem`);        const unsubscribe = onValue(fileSystemRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
                 setFileTree(data);
-                // Only set first file as active if no files are open
-                if (!activeFile && openFiles.length === 0 && Object.keys(data).length > 0) {
+                
+                // Only auto-select first file on initial load when no files are open
+                if (isInitialLoad.current && !activeFile && openFiles.length === 0) {
                     const firstFile = findFirstFile(data);
                     if (firstFile) {
                         setActiveFile(firstFile);
                         setOpenFiles([firstFile]);
                     }
                 }
-            } else {                // Initialize with a default file structure
+                isInitialLoad.current = false;
+            } else {// Initialize with a default file structure
                 const defaultStructure = {
                     root: {
                         type: 'folder',
@@ -203,7 +205,7 @@ export const useFileSystem = (roomId) => {
             'md': 'markdown'
         };
         
-        const language = languageMap[extension] || 'text';
+        const language = languageMap[extension] || 'javascript';
         
         // Create new file
         current[firebaseKey] = {

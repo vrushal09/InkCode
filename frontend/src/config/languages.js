@@ -34,7 +34,9 @@ export const languageExtensions = {
     kotlin: () => StreamLanguage.define(kotlin),
     scala: () => StreamLanguage.define(scala),
     shell: () => StreamLanguage.define(shell),
+    bash: () => StreamLanguage.define(shell),
     typescript: () => javascript(), // TypeScript uses same highlighting as JavaScript
+    text: () => javascript(), // Fallback for unknown file types
 };
 
 export const languageIds = {

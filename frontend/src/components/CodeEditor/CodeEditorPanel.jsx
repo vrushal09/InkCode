@@ -26,16 +26,19 @@ const CodeEditorPanel = ({
                 setEditorElement(editorElement);
             }
         }
-    }, [setEditorElement, code]); // Re-run when code changes to ensure element is found
-
-    // Create CodeMirror extensions
+    }, [setEditorElement, code]); // Re-run when code changes to ensure element is found    // Create CodeMirror extensions
     const blameTooltipExtension = createBlameTooltipExtension(codeBlame);
     const lineBlameTooltipExtension = createLineBlameTooltipExtension(lineBlameData);
     const commentGutter = createCommentGutterExtension(
         comments,
         handleStartComment,
         setActiveComment
-    );    return (
+    );
+
+    // Debug logging to identify the issue
+    console.log('CodeEditorPanel - language:', language);
+    console.log('CodeEditorPanel - languageExtensions[language]:', languageExtensions[language]);
+    console.log('CodeEditorPanel - typeof languageExtensions[language]:', typeof languageExtensions[language]);return (
         <div className="flex-1 bg-[#111119] border border-gray-800 rounded-lg overflow-hidden relative">
             <div className="p-4 border-b border-gray-800">
                 <h3 className="text-lg font-semibold flex items-center">
@@ -54,13 +57,25 @@ const CodeEditorPanel = ({
                         {activeFile}
                     </p>
                 )}
-            </div><div className="h-[400px] overflow-y-auto" ref={editorContainerRef}>
+            </div>            <div className="h-[400px] overflow-y-auto" ref={editorContainerRef}>
                 <CodeMirror
                     value={code}
                     height="100%"
                     theme="dark"
                     extensions={[
-                        languageExtensions[language] ? languageExtensions[language]() : javascript(),
+                        (() => {
+                            try {
+                                if (languageExtensions[language] && typeof languageExtensions[language] === 'function') {
+                                    return languageExtensions[language]();
+                                } else {
+                                    console.warn('Language extension not found for:', language, 'falling back to javascript');
+                                    return javascript();
+                                }
+                            } catch (error) {
+                                console.error('Error loading language extension:', error);
+                                return javascript();
+                            }
+                        })(),
                         blameTooltipExtension,
                         lineBlameTooltipExtension,
                         commentGutter

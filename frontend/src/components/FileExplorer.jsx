@@ -144,8 +144,7 @@ const FileExplorer = ({
                     <div className="py-2">
                         {Object.entries(fileTree.root.children || {}).map(([key, node]) => {
                             const path = `root/${key}`;
-                            return (
-                                <FileNode
+                            return (                                <FileNode
                                     key={path}
                                     node={node}
                                     path={path}
@@ -158,6 +157,8 @@ const FileExplorer = ({
                                     onDelete={onDeleteItem}
                                     onRename={onRenameItem}
                                     level={0}
+                                    expandedFolders={expandedFolders}
+                                    activeFile={activeFile}
                                 />
                             );
                         })}

@@ -17,9 +17,9 @@ export const useCodeEditor = (roomId, activeFile, getFileContent, updateFileCont
             
             if (content !== null && fileObject) {
                 setCode(content);
-                
-                // Use the language stored in the file object, or detect from filename
+                  // Use the language stored in the file object, or detect from filename
                 if (fileObject.language) {
+                    console.log('useCodeEditor - Using stored language:', fileObject.language);
                     setLanguage(fileObject.language);
                 } else {
                     // Fallback: determine language from file extension using original filename
@@ -39,8 +39,8 @@ export const useCodeEditor = (roomId, activeFile, getFileContent, updateFileCont
                         'json': 'json',
                         'md': 'markdown'
                     };
-                    
-                    const detectedLanguage = languageMap[extension] || 'javascript';
+                      const detectedLanguage = languageMap[extension] || 'javascript';
+                    console.log('useCodeEditor - Detected language from extension:', extension, '->', detectedLanguage);
                     setLanguage(detectedLanguage);
                 }
             }
