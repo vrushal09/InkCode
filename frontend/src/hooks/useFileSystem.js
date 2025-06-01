@@ -374,6 +374,8 @@ export const useFileSystem = (roomId) => {
 
     // Open file in editor
     const openFile = (path) => {
+        if (!path) return;
+        
         setActiveFile(path);
         setOpenFiles(prev => {
             if (!prev.includes(path)) {
@@ -381,6 +383,15 @@ export const useFileSystem = (roomId) => {
             }
             return prev;
         });
+        
+        // Ensure parent folders are expanded
+        const pathParts = path.split('/');
+        if (pathParts.length > 1) {
+            const parentPath = pathParts.slice(0, -1).join('/');
+            if (!expandedFolders.has(parentPath)) {
+                setExpandedFolders(new Set([...expandedFolders, parentPath]));
+            }
+        }
     };
 
     // Close file
