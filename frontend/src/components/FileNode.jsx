@@ -10,6 +10,7 @@ import {
     TrashIcon,
     PencilIcon
 } from '@heroicons/react/24/outline';
+import { toast } from 'react-toastify';
 
 const FileNode = ({ 
     node, 
@@ -57,26 +58,50 @@ const FileNode = ({
     const handleRightClick = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        setShowContextMenu(true);
+        const rect = e.currentTarget.getBoundingClientRect();
+        setShowContextMenu({
+            x: e.clientX,
+            y: e.clientY,
+            nodeRect: rect
+        });
     };
 
     const handleRename = () => {
-        if (newName && newName !== node.name) {
-            onRename(path, newName);
+        if (!newName || newName === node.name) {
+            setIsRenaming(false);
+            setShowContextMenu(false);
+            return;
         }
-        setIsRenaming(false);
-        setShowContextMenu(false);
+        
+        try {
+            onRename(path, newName);
+            setIsRenaming(false);
+            setShowContextMenu(false);
+        } catch (error) {
+            console.error("Error renaming item:", error);
+            toast.error(`Failed to rename: ${error.message}`);
+        }
     };
 
     const handleCreate = (type) => {
-        if (createName.trim()) {
+        if (!createName.trim()) return;
+        
+        try {
+            // Ensure file has extension if creating a file
+            const finalName = type === 'file' && !createName.includes('.') 
+                ? `${createName}.js` 
+                : createName;
+                
             if (type === 'file') {
-                onCreateFile(path, createName);
+                onCreateFile(path, finalName);
             } else {
-                onCreateFolder(path, createName);
+                onCreateFolder(path, finalName);
             }
             setCreateName('');
             setShowCreateInput(null);
+        } catch (error) {
+            console.error("Error creating item:", error);
+            toast.error(`Failed to create ${type}: ${error.message}`);
         }
     };
 
@@ -174,7 +199,15 @@ const FileNode = ({
             {showContextMenu && (
                 <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowContextMenu(false)} />
-                    <div className="absolute left-full top-0 ml-2 bg-gray-800 border border-gray-600 rounded shadow-lg py-1 z-50 min-w-32">
+                    <div 
+                        className="fixed bg-gray-800 border border-gray-600 rounded shadow-lg py-1 z-50 min-w-32"
+                        style={{
+                            left: `${showContextMenu.x}px`,
+                            top: `${showContextMenu.y}px`,
+                            transform: showContextMenu.x + 200 > window.innerWidth ? 
+                                'translateX(-100%)' : 'none'
+                        }}
+                    >
                         {node.type === 'folder' && (
                             <>
                                 <button
@@ -218,8 +251,13 @@ const FileNode = ({
                                 className="w-full text-left px-3 py-1 text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2"
                                 onClick={(e) => {
                                     e.stopPropagation();
+                                    try {
                                     onDelete(path);
-                                    setShowContextMenu(false);
+                                } catch (error) {
+                                    console.error("Error deleting item:", error);
+                                    toast.error(`Failed to delete: ${error.message}`);
+                                }
+                                setShowContextMenu(false);
                                 }}
                             >
                                 <TrashIcon className="w-3 h-3" />
@@ -249,7 +287,7 @@ const FileNode = ({
                         onChange={(e) => setCreateName(e.target.value)}
                         onBlur={() => handleCreate(showCreateInput)}
                         onKeyDown={(e) => handleKeyPress(e, 'create')}
-                        placeholder={showCreateInput === 'folder' ? 'Folder name' : 'File name'}
+                        placeholder={showCreateInput === 'folder' ? 'Folder name' : 'File name (e.g. file.js)'}
                         className="bg-gray-700 text-white text-sm px-1 rounded flex-1 focus:outline-none focus:ring-1 focus:ring-violet-500"
                         autoFocus
                     />
