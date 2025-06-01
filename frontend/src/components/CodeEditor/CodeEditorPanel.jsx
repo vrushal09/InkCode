@@ -1,6 +1,7 @@
 import CodeMirror from "@uiw/react-codemirror";
 import { useEffect, useRef } from "react";
 import { languageExtensions } from "../../config/languages";
+import { javascript } from "@codemirror/lang-javascript";
 import { createBlameTooltipExtension } from "../../extensions/blameTooltipExtension";
 import { createLineBlameTooltipExtension } from "../../extensions/lineBlameTooltipExtension";
 import { createCommentGutterExtension } from "../../extensions/commentGutterExtension";
@@ -59,7 +60,7 @@ const CodeEditorPanel = ({
                     height="100%"
                     theme="dark"
                     extensions={[
-                        languageExtensions[language](),
+                        languageExtensions[language] ? languageExtensions[language]() : javascript(),
                         blameTooltipExtension,
                         lineBlameTooltipExtension,
                         commentGutter

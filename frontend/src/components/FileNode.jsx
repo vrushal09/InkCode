@@ -22,7 +22,9 @@ const FileNode = ({
     onCreateFolder,
     onDelete,
     onRename,
-    level = 0 
+    level = 0,
+    expandedFolders,
+    activeFile
 }) => {
     const [showContextMenu, setShowContextMenu] = useState(false);
     const [isRenaming, setIsRenaming] = useState(false);
@@ -35,15 +37,15 @@ const FileNode = ({
         
         const iconColors = {
             'js': 'text-yellow-400',
-            'jsx': 'text-blue-400',
-            'ts': 'text-blue-500',
-            'tsx': 'text-blue-500',
+            'jsx': 'text-violet-400',
+            'ts': 'text-violet-500',
+            'tsx': 'text-violet-500',
             'py': 'text-green-400',
             'java': 'text-orange-500',
             'cpp': 'text-blue-600',
             'c': 'text-blue-600',
             'html': 'text-orange-400',
-            'css': 'text-blue-300',
+            'css': 'text-violet-300',
             'json': 'text-yellow-300',
             'md': 'text-gray-300',
             'txt': 'text-gray-400'
@@ -103,7 +105,7 @@ const FileNode = ({
                 className={`
                     flex items-center px-2 py-1 rounded cursor-pointer select-none group
                     hover:bg-gray-800/50 transition-colors
-                    ${isActive ? 'bg-blue-600/20 border-l-2 border-l-blue-500' : ''}
+                    ${isActive ? 'bg-violet-600/20 border-l-2 border-l-violet-500' : ''}
                 `}
                 style={{ paddingLeft: `${level * 12 + 8}px` }}
                 onContextMenu={handleRightClick}
@@ -130,9 +132,9 @@ const FileNode = ({
                 <div className="w-4 h-4 mr-2 flex items-center justify-center">
                     {node.type === 'folder' ? (
                         isExpanded ? (
-                            <FolderOpenIcon className="w-4 h-4 text-blue-400" />
+                            <FolderOpenIcon className="w-4 h-4 text-violet-400" />
                         ) : (
-                            <FolderIcon className="w-4 h-4 text-blue-400" />
+                            <FolderIcon className="w-4 h-4 text-violet-400" />
                         )
                     ) : (
                         <DocumentIcon className={`w-4 h-4 ${getFileIcon(node.name)}`} />
@@ -147,9 +149,10 @@ const FileNode = ({
                         onChange={(e) => setNewName(e.target.value)}
                         onBlur={handleRename}
                         onKeyDown={(e) => handleKeyPress(e, 'rename')}
-                        className="bg-gray-700 text-white text-sm px-1 rounded flex-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="bg-gray-700 text-white text-sm px-1 rounded flex-1 focus:outline-none focus:ring-1 focus:ring-violet-500"
                         autoFocus
-                    />                ) : (
+                    />
+                ) : (
                     <span className="text-sm text-gray-200 flex-1 truncate">
                         {node.displayName || node.name}
                     </span>
@@ -169,55 +172,62 @@ const FileNode = ({
 
             {/* Context Menu */}
             {showContextMenu && (
-                <div className="absolute left-full top-0 ml-2 bg-gray-800 border border-gray-600 rounded shadow-lg py-1 z-50 min-w-32">
-                    {node.type === 'folder' && (
-                        <>
-                            <button
-                                className="w-full text-left px-3 py-1 text-sm text-gray-200 hover:bg-gray-700 flex items-center gap-2"
-                                onClick={() => {
-                                    setShowCreateInput('file');
-                                    setShowContextMenu(false);
-                                }}
-                            >
-                                <PlusIcon className="w-3 h-3" />
-                                New File
-                            </button>
-                            <button
-                                className="w-full text-left px-3 py-1 text-sm text-gray-200 hover:bg-gray-700 flex items-center gap-2"
-                                onClick={() => {
-                                    setShowCreateInput('folder');
-                                    setShowContextMenu(false);
-                                }}
-                            >
-                                <PlusIcon className="w-3 h-3" />
-                                New Folder
-                            </button>
-                            <hr className="border-gray-600 my-1" />
-                        </>
-                    )}
-                    <button
-                        className="w-full text-left px-3 py-1 text-sm text-gray-200 hover:bg-gray-700 flex items-center gap-2"
-                        onClick={() => {
-                            setIsRenaming(true);
-                            setShowContextMenu(false);
-                        }}
-                    >
-                        <PencilIcon className="w-3 h-3" />
-                        Rename
-                    </button>
-                    {path !== 'root' && (
+                <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowContextMenu(false)} />
+                    <div className="absolute left-full top-0 ml-2 bg-gray-800 border border-gray-600 rounded shadow-lg py-1 z-50 min-w-32">
+                        {node.type === 'folder' && (
+                            <>
+                                <button
+                                    className="w-full text-left px-3 py-1 text-sm text-gray-200 hover:bg-gray-700 flex items-center gap-2"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowCreateInput('file');
+                                        setShowContextMenu(false);
+                                    }}
+                                >
+                                    <PlusIcon className="w-3 h-3" />
+                                    New File
+                                </button>
+                                <button
+                                    className="w-full text-left px-3 py-1 text-sm text-gray-200 hover:bg-gray-700 flex items-center gap-2"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowCreateInput('folder');
+                                        setShowContextMenu(false);
+                                    }}
+                                >
+                                    <PlusIcon className="w-3 h-3" />
+                                    New Folder
+                                </button>
+                                <hr className="border-gray-600 my-1" />
+                            </>
+                        )}
                         <button
-                            className="w-full text-left px-3 py-1 text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2"
-                            onClick={() => {
-                                onDelete(path);
+                            className="w-full text-left px-3 py-1 text-sm text-gray-200 hover:bg-gray-700 flex items-center gap-2"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsRenaming(true);
                                 setShowContextMenu(false);
                             }}
                         >
-                            <TrashIcon className="w-3 h-3" />
-                            Delete
+                            <PencilIcon className="w-3 h-3" />
+                            Rename
                         </button>
-                    )}
-                </div>
+                        {path !== 'root' && (
+                            <button
+                                className="w-full text-left px-3 py-1 text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDelete(path);
+                                    setShowContextMenu(false);
+                                }}
+                            >
+                                <TrashIcon className="w-3 h-3" />
+                                Delete
+                            </button>
+                        )}
+                    </div>
+                </>
             )}
 
             {/* Create Input */}
@@ -228,7 +238,7 @@ const FileNode = ({
                 >
                     <div className="w-4 h-4 mr-2 flex items-center justify-center">
                         {showCreateInput === 'folder' ? (
-                            <FolderIcon className="w-4 h-4 text-blue-400" />
+                            <FolderIcon className="w-4 h-4 text-violet-400" />
                         ) : (
                             <DocumentIcon className="w-4 h-4 text-gray-400" />
                         )}
@@ -240,7 +250,7 @@ const FileNode = ({
                         onBlur={() => handleCreate(showCreateInput)}
                         onKeyDown={(e) => handleKeyPress(e, 'create')}
                         placeholder={showCreateInput === 'folder' ? 'Folder name' : 'File name'}
-                        className="bg-gray-700 text-white text-sm px-1 rounded flex-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="bg-gray-700 text-white text-sm px-1 rounded flex-1 focus:outline-none focus:ring-1 focus:ring-violet-500"
                         autoFocus
                     />
                 </div>
@@ -256,8 +266,8 @@ const FileNode = ({
                                 key={childPath}
                                 node={child}
                                 path={childPath}
-                                isExpanded={isExpanded}
-                                isActive={isActive}
+                                isExpanded={expandedFolders?.has(childPath)}
+                                isActive={activeFile === childPath}
                                 onToggle={onToggle}
                                 onSelect={onSelect}
                                 onCreateFile={onCreateFile}
@@ -265,18 +275,12 @@ const FileNode = ({
                                 onDelete={onDelete}
                                 onRename={onRename}
                                 level={level + 1}
+                                expandedFolders={expandedFolders}
+                                activeFile={activeFile}
                             />
                         );
                     })}
                 </div>
-            )}
-
-            {/* Click outside to close context menu */}
-            {showContextMenu && (
-                <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setShowContextMenu(false)}
-                />
             )}
         </div>
     );
