@@ -2,13 +2,11 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { auth, database } from "../config/firebase";
 import { ref, onValue, set, remove } from "firebase/database";
 
-export const useCursors = (roomId) => {
+export const useCursors = (roomId, activeFile) => {
     const [userCursors, setUserCursors] = useState({});
     const [editorElement, setEditorElement] = useState(null);
     const lastPositionRef = useRef(null);
-    const animationFrameRef = useRef(null);
-
-    // Track other users' cursors
+    const animationFrameRef = useRef(null);    // Track other users' cursors
     useEffect(() => {
         if (!roomId) return;
 
@@ -16,9 +14,13 @@ export const useCursors = (roomId) => {
         const unsubscribe = onValue(cursorsRef, (snapshot) => {
             const cursorsData = snapshot.val() || {};
             
-            // Filter out current user's cursor
+            // Filter out current user's cursor and only show cursors for same active file
             const otherUsersCursors = Object.entries(cursorsData)
                 .filter(([userId]) => userId !== auth.currentUser.uid)
+                .filter(([userId, cursorData]) => {
+                    // Only show cursors if user is viewing the same file
+                    return cursorData.activeFile === activeFile;
+                })
                 .reduce((acc, [userId, cursorData]) => {
                     acc[userId] = cursorData;
                     return acc;
@@ -33,7 +35,27 @@ export const useCursors = (roomId) => {
             const userCursorRef = ref(database, `rooms/${roomId}/cursors/${auth.currentUser.uid}`);
             remove(userCursorRef);
         };
-    }, [roomId]);    // Track typing state
+    }, [roomId, activeFile]);
+
+    // Update active file in cursor data when it changes
+    useEffect(() => {
+        if (!roomId || !activeFile) return;
+
+        // Update the active file for the current user's cursor
+        const userCursorRef = ref(database, `rooms/${roomId}/cursors/${auth.currentUser.uid}`);
+        
+        // First check if cursor exists, then update only the activeFile
+        onValue(userCursorRef, (snapshot) => {
+            const currentCursor = snapshot.val();
+            if (currentCursor) {
+                set(userCursorRef, {
+                    ...currentCursor,
+                    activeFile: activeFile,
+                    timestamp: Date.now()
+                });
+            }
+        }, { onlyOnce: true });
+    }, [activeFile, roomId]);// Track typing state
     const [isTyping, setIsTyping] = useState(false);
     const typingTimeoutRef = useRef(null);
 
@@ -54,9 +76,7 @@ export const useCursors = (roomId) => {
             return;
         }
 
-        lastPositionRef.current = currentPos;
-
-        const userCursorRef = ref(database, `rooms/${roomId}/cursors/${auth.currentUser.uid}`);
+        lastPositionRef.current = currentPos;        const userCursorRef = ref(database, `rooms/${roomId}/cursors/${auth.currentUser.uid}`);
         set(userCursorRef, {
             userId: auth.currentUser.uid,
             userName: auth.currentUser.displayName || "Anonymous",
@@ -65,9 +85,10 @@ export const useCursors = (roomId) => {
             x: relativeX,
             y: relativeY,
             state: cursorState, // 'normal', 'typing'
+            activeFile: activeFile, // Track which file the user is viewing
             timestamp: Date.now()
         });
-    }, [roomId]);    // High-frequency mouse move handler using requestAnimationFrame
+    }, [roomId, activeFile]);    // High-frequency mouse move handler using requestAnimationFrame
     const handleMouseMove = useCallback((event) => {
         if (!editorElement) return;
 

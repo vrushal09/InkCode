@@ -104,7 +104,7 @@ const CodeEditorContainer = () => {
     } = useComments(roomId);    const {
         userCursors,
         setEditorElement
-    } = useCursors(roomId);
+    } = useCursors(roomId, activeFile);
 
     // Track editor element for cursor positioning
     const [editorElementRef, setEditorElementRef] = useState(null);
