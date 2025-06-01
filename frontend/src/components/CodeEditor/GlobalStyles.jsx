@@ -83,9 +83,7 @@ export const GlobalStyles = () => {
                     transform: translateX(100%);
                     opacity: 0;
                 }
-            }
-
-            /* Chat notification pulse */
+            }            /* Chat notification pulse */
             .chat-notification {
                 animation: pulse 2s infinite;
             }
@@ -100,6 +98,52 @@ export const GlobalStyles = () => {
                 100% {
                     box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
                 }
+            }            /* Collaborative cursor styles */
+            .collaborative-cursor {
+                pointer-events: none;
+                z-index: 1000;
+                transition: all 75ms cubic-bezier(0.4, 0, 0.2, 1);
+                will-change: transform;
+            }
+
+            .cursor-fade-in {
+                animation: cursorFadeIn 200ms ease-out;
+            }
+
+            @keyframes cursorFadeIn {
+                from {
+                    opacity: 0;
+                    transform: scale(0.8) translate(-2px, -2px);
+                }
+                to {
+                    opacity: 1;
+                    transform: scale(1) translate(-2px, -2px);
+                }
+            }
+
+            .cursor-label {
+                animation: labelSlideIn 250ms ease-out;
+                backdrop-filter: blur(4px);
+            }
+
+            @keyframes labelSlideIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(-5px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            /* Improve CodeMirror cursor tracking */
+            .cm-editor {
+                position: relative;
+            }
+
+            .cm-content {
+                position: relative;
             }
         `;
         document.head.appendChild(style);

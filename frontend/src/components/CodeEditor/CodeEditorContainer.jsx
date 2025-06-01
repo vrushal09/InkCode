@@ -18,8 +18,10 @@ import { useCodeEditor } from "../../hooks/useCodeEditor";
 import { useCollaboration } from "../../hooks/useCollaboration";
 import { useChat } from "../../hooks/useChat";
 import { useComments } from "../../hooks/useComments";
+import { useCursors } from "../../hooks/useCursors";
 import { codeExecutionService } from "../../services/codeExecutionService";
 import { GlobalStyles } from "./GlobalStyles";
+import CursorOverlay from "../CursorOverlay";
 
 const CodeEditorContainer = () => {
     const navigate = useNavigate();
@@ -57,9 +59,7 @@ const CodeEditorContainer = () => {
         sendMessage,
         deleteMessage,
         formatChatTime
-    } = useChat(roomId);
-
-    const {
+    } = useChat(roomId);    const {
         comments,
         activeComment,
         setActiveComment,
@@ -75,7 +75,19 @@ const CodeEditorContainer = () => {
         handleDeleteComment,
         handleDeleteReply,
         calculateCommentPosition
-    } = useComments(roomId);
+    } = useComments(roomId);    const {
+        userCursors,
+        setEditorElement
+    } = useCursors(roomId);
+
+    // Track editor element for cursor positioning
+    const [editorElementRef, setEditorElementRef] = useState(null);
+
+    useEffect(() => {
+        if (editorElementRef) {
+            setEditorElement(editorElementRef);
+        }
+    }, [editorElementRef, setEditorElement]);
 
     // Window dimensions for responsive design
     const [windowDimensions, setWindowDimensions] = useState({
@@ -128,8 +140,7 @@ const CodeEditorContainer = () => {
             <div className="max-w-7xl mx-auto px-6 py-8">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-fit">
                     {/* Left Panel - Editor and Input */}
-                    <div className="flex flex-col gap-6">
-                        {/* Code Editor */}
+                    <div className="flex flex-col gap-6">                        {/* Code Editor */}
                         <CodeEditorPanel
                             code={code}
                             language={language}
@@ -139,6 +150,7 @@ const CodeEditorContainer = () => {
                             handleCodeChange={handleCodeChange}
                             handleStartComment={handleStartComment}
                             setActiveComment={setActiveComment}
+                            setEditorElement={setEditorElementRef}
                         />
 
                         {/* Comments System */}
@@ -178,9 +190,12 @@ const CodeEditorContainer = () => {
                         <OutputPanel
                             output={output}
                         />
-                    </div>
-                </div>
-            </div>
+                    </div>                </div>
+            </div>            {/* Collaborative Cursors Overlay */}
+            <CursorOverlay 
+                userCursors={userCursors}
+                editorElement={editorElementRef}
+            />
         </div>
     );
 };

@@ -1,4 +1,5 @@
 import CodeMirror from "@uiw/react-codemirror";
+import { useEffect, useRef } from "react";
 import { languageExtensions } from "../../config/languages";
 import { createBlameTooltipExtension } from "../../extensions/blameTooltipExtension";
 import { createLineBlameTooltipExtension } from "../../extensions/lineBlameTooltipExtension";
@@ -12,8 +13,19 @@ const CodeEditorPanel = ({
     comments,
     handleCodeChange,
     handleStartComment,
-    setActiveComment
+    setActiveComment,
+    setEditorElement
 }) => {
+    const editorContainerRef = useRef(null);    // Set up editor element reference for cursor tracking
+    useEffect(() => {
+        if (editorContainerRef.current && setEditorElement) {
+            const editorElement = editorContainerRef.current.querySelector('.cm-editor');
+            if (editorElement) {
+                setEditorElement(editorElement);
+            }
+        }
+    }, [setEditorElement, code]); // Re-run when code changes to ensure element is found
+
     // Create CodeMirror extensions
     const blameTooltipExtension = createBlameTooltipExtension(codeBlame);
     const lineBlameTooltipExtension = createLineBlameTooltipExtension(lineBlameData);
@@ -32,8 +44,7 @@ const CodeEditorPanel = ({
                     </svg>
                     Code Editor
                 </h3>
-            </div>
-            <div className="h-[400px] overflow-y-auto">
+            </div>            <div className="h-[400px] overflow-y-auto" ref={editorContainerRef}>
                 <CodeMirror
                     value={code}
                     height="100%"
