@@ -1,10 +1,6 @@
-import { languageExtensions } from "../../config/languages";
-
 const EditorHeader = ({
     collaborators,
     codeBlame,
-    language,
-    setLanguage,
     unreadCount,
     toggleChat,
     navigate
@@ -66,8 +62,7 @@ const EditorHeader = ({
                     </div>
 
                     {/* Controls */}
-                    <div className="flex items-center space-x-3">
-                        {/* Chat Toggle Button */}
+                    <div className="flex items-center space-x-3">                        {/* Chat Toggle Button */}
                         <button
                             onClick={toggleChat}
                             className={`relative p-2 bg-[#1a1a23] border border-gray-700 rounded-lg hover:bg-[#2a2a35] transition-colors ${unreadCount > 0 ? 'chat-notification' : ''}`}
@@ -82,19 +77,6 @@ const EditorHeader = ({
                                 </span>
                             )}
                         </button>
-
-                        {/* Language Selector */}
-                        <select
-                            value={language}
-                            onChange={(e) => setLanguage(e.target.value)}
-                            className="px-3 py-2 bg-[#1a1a23] border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-600"
-                        >
-                            {Object.keys(languageExtensions).map((lang) => (
-                                <option key={lang} value={lang}>
-                                    {lang.charAt(0).toUpperCase() + lang.slice(1)}
-                                </option>
-                            ))}
-                        </select>
 
                         {/* Back Button */}
                         <button

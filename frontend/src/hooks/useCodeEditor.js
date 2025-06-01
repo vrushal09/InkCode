@@ -4,82 +4,128 @@ import { ref, onValue, set } from "firebase/database";
 import { toast } from "react-toastify";
 import { codeExecutionService } from "../services/codeExecutionService";
 
-export const useCodeEditor = (roomId) => {
+export const useCodeEditor = (roomId, activeFile, getFileContent, updateFileContent, getFileObject) => {
     const [code, setCode] = useState("");
     const [language, setLanguage] = useState("javascript");
     const [input, setInput] = useState("");
     const [output, setOutput] = useState("");
-    const [isExecuting, setIsExecuting] = useState(false);
+    const [isExecuting, setIsExecuting] = useState(false);    // Load code from active file
+    useEffect(() => {
+        if (activeFile && getFileContent && getFileObject) {
+            const content = getFileContent(activeFile);
+            const fileObject = getFileObject(activeFile);
+            
+            if (content !== null && fileObject) {
+                setCode(content);
+                
+                // Use the language stored in the file object, or detect from filename
+                if (fileObject.language) {
+                    setLanguage(fileObject.language);
+                } else {
+                    // Fallback: determine language from file extension using original filename
+                    const fileName = fileObject.name || activeFile.split('/').pop();
+                    const extension = fileName.split('.').pop()?.toLowerCase();
+                    const languageMap = {
+                        'js': 'javascript',
+                        'jsx': 'javascript',
+                        'ts': 'typescript',
+                        'tsx': 'typescript',
+                        'py': 'python',
+                        'java': 'java',
+                        'cpp': 'cpp',
+                        'c': 'c',
+                        'html': 'html',
+                        'css': 'css',
+                        'json': 'json',
+                        'md': 'markdown'
+                    };
+                    
+                    const detectedLanguage = languageMap[extension] || 'javascript';
+                    setLanguage(detectedLanguage);
+                }
+            }
+        } else {
+            setCode("");
+        }
+    }, [activeFile, getFileContent, getFileObject]);
 
-    // Load code and language from Firebase
+    // Load code and language from Firebase (legacy support)
     useEffect(() => {
         if (!roomId) return;
 
         const roomRef = ref(database, `rooms/${roomId}`);
         const unsubscribe = onValue(roomRef, (snapshot) => {
             const data = snapshot.val();
-            if (data) {
+            if (data && !activeFile) {
+                // Only use Firebase data if no active file is selected
                 setCode(data.code || "");
                 setLanguage(data.language || "javascript");
             }
         });
 
         return () => unsubscribe();
-    }, [roomId]);
-
-    // Handle code changes with blame tracking
+    }, [roomId, activeFile]);    // Handle code changes with blame tracking
     const handleCodeChange = (value) => {
         setCode(value);
-        const roomRef = ref(database, `rooms/${roomId}`);
+        
+        // Update file content if we have an active file
+        if (activeFile && updateFileContent) {
+            updateFileContent(activeFile, value);
+        }
+        
+        // Also update Firebase for backwards compatibility
+        if (roomId) {
+            const roomRef = ref(database, `rooms/${roomId}`);
 
-        // First read the current room data
-        onValue(roomRef, (snapshot) => {
-            const currentData = snapshot.val() || {};
-            const now = Date.now();
+            // First read the current room data
+            onValue(roomRef, (snapshot) => {
+                const currentData = snapshot.val() || {};
+                const now = Date.now();
 
-            // Get old code lines and new code lines
-            const oldCode = currentData.code || "";
-            const oldLines = oldCode.split('\n');
-            const newLines = value.split('\n');
+                // Get old code lines and new code lines
+                const oldCode = currentData.code || "";
+                const oldLines = oldCode.split('\n');
+                const newLines = value.split('\n');
 
-            // Create or update the lineBlame object
-            const lineBlame = { ...(currentData.lineBlame || {}) };
+                // Create or update the lineBlame object
+                const lineBlame = { ...(currentData.lineBlame || {}) };
 
-            // Track changed lines by comparing old and new code
-            for (let i = 0; i < newLines.length; i++) {
-                // If line is new or changed, update blame data
-                if (i >= oldLines.length || newLines[i] !== oldLines[i]) {
-                    lineBlame[i] = {
-                        userId: auth.currentUser.uid,
-                        userName: auth.currentUser.displayName || "Anonymous",
-                        userPhoto: auth.currentUser.photoURL ||
-                            "https://api.dicebear.com/7.x/avatars/svg?seed=" + auth.currentUser.uid,
-                        timestamp: now
-                    };
+                // Track changed lines by comparing old and new code
+                for (let i = 0; i < newLines.length; i++) {
+                    // If line is new or changed, update blame data
+                    if (i >= oldLines.length || newLines[i] !== oldLines[i]) {
+                        lineBlame[i] = {
+                            userId: auth.currentUser.uid,
+                            userName: auth.currentUser.displayName || "Anonymous",
+                            userPhoto: auth.currentUser.photoURL ||
+                                "https://api.dicebear.com/7.x/avatars/svg?seed=" + auth.currentUser.uid,
+                            timestamp: now
+                        };
+                    }
                 }
-            }
 
-            // Keep track of last editor for the whole file
-            const blameData = { ...(currentData.codeBlame || {}) };
-            blameData.lastEditor = {
-                userId: auth.currentUser.uid,
-                userName: auth.currentUser.displayName || "Anonymous",
-                userPhoto: auth.currentUser.photoURL ||
-                    "https://api.dicebear.com/7.x/avatars/svg?seed=" + auth.currentUser.uid,
-                timestamp: now
-            };
+                // Keep track of last editor for the whole file
+                const blameData = { ...(currentData.codeBlame || {}) };
+                blameData.lastEditor = {
+                    userId: auth.currentUser.uid,
+                    userName: auth.currentUser.displayName || "Anonymous",
+                    userPhoto: auth.currentUser.photoURL ||
+                        "https://api.dicebear.com/7.x/avatars/svg?seed=" + auth.currentUser.uid,
+                    timestamp: now
+                };
 
-            // Then update data preserving other fields
-            set(roomRef, {
-                ...currentData,
-                code: value,
-                language,
-                lastUpdated: now,
-                codeBlame: blameData,
-                lineBlame: lineBlame // Save line-by-line blame data
-            });
-        }, { onlyOnce: true });
-    };    // Execute code function
+                // Then update data preserving other fields
+                set(roomRef, {
+                    ...currentData,
+                    code: value,
+                    language,
+                    lastUpdated: now,
+                    codeBlame: blameData,
+                    lineBlame: lineBlame // Save line-by-line blame data
+                });
+            }, { onlyOnce: true });
+        }
+    };// Execute code function
     const executeCode = async () => {
         setIsExecuting(true);
         setOutput("");

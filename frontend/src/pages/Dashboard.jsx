@@ -6,27 +6,17 @@ import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'react-toastify';
 import TeamManager from '../components/TeamManager';
 
-const PROGRAMMING_LANGUAGES = [
-  'javascript',
-  'python',
-  'cpp',
-  'c',
-  'typescript'
-];
+// Removed language constants as we now auto-detect from file extensions
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
-  const [projects, setProjects] = useState([]);
-  const [filteredProjects, setFilteredProjects] = useState([]);
-  const [newProject, setNewProject] = useState({
-    name: '',
-    language: 'javascript'
+  const [projects, setProjects] = useState([]);  const [filteredProjects, setFilteredProjects] = useState([]);  const [newProject, setNewProject] = useState({
+    name: ''
   });
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedLanguage, setSelectedLanguage] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
   useEffect(() => {
     const loadProjects = async () => {
@@ -64,7 +54,6 @@ const Dashboard = () => {
       loadProjects();
     }
   }, []);
-
   // Filter and search projects
   useEffect(() => {
     let filtered = projects;
@@ -72,14 +61,8 @@ const Dashboard = () => {
     // Filter by search query
     if (searchQuery) {
       filtered = filtered.filter(project =>
-        project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        project.language.toLowerCase().includes(searchQuery.toLowerCase())
+        project.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
-    }
-
-    // Filter by language
-    if (selectedLanguage !== 'all') {
-      filtered = filtered.filter(project => project.language === selectedLanguage);
     }
 
     // Sort projects
@@ -87,23 +70,19 @@ const Dashboard = () => {
       filtered = filtered.sort((a, b) => b.timestamp - a.timestamp);
     } else if (sortBy === 'name') {
       filtered = filtered.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (sortBy === 'language') {
-      filtered = filtered.sort((a, b) => a.language.localeCompare(b.language));
     }
 
     setFilteredProjects(filtered);
-  }, [projects, searchQuery, selectedLanguage, sortBy]);
+  }, [projects, searchQuery, sortBy]);
   const handleCreateProject = async (e) => {
     e.preventDefault();
     try {
       const projectId = uuidv4();
       const roomId = uuidv4();
-      
-      // Create project in projects collection
+        // Create project in projects collection
       const projectRef = ref(database, `projects/${projectId}`);
       await set(projectRef, {
         name: newProject.name,
-        language: newProject.language,
         createdAt: Date.now(),
         createdBy: auth.currentUser.uid,
         roomId,
@@ -119,15 +98,14 @@ const Dashboard = () => {
         }
       });
 
-      // Create room in rooms collection
+      // Create room in rooms collection with empty files structure
       const roomRef = ref(database, `rooms/${roomId}`);
       await set(roomRef, {
         name: newProject.name,
-        language: newProject.language,
         createdAt: Date.now(),
         createdBy: auth.currentUser.uid,
         projectId,
-        code: getStarterCode(newProject.language)
+        files: {} // Initialize empty files structure for file system
       });
 
       // Add project to user's projects list
@@ -136,26 +114,15 @@ const Dashboard = () => {
         projectId,
         joinedAt: Date.now(),
         role: 'owner'
-      });
-
-      setIsModalOpen(false);
-      setNewProject({ name: '', language: 'javascript' });
+      });      setIsModalOpen(false);
+      setNewProject({ name: '' });
       navigate(`/editor/${roomId}`);
       toast.success('Project created successfully!');
     } catch (error) {
       console.error('Error creating project:', error);
       toast.error('Failed to create project');
     }  };
-  const getStarterCode = (language) => {
-    const starterCodes = {
-      javascript: '// Welcome to your new JavaScript project\nconsole.log("Hello, World!");',
-      python: '# Welcome to your new Python project\nprint("Hello, World!")',
-      cpp: '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello, World!" << endl;\n    return 0;\n}',
-      c: '#include <stdio.h>\n\nint main() {\n    printf("Hello, World!\\n");\n    return 0;\n}',
-      typescript: '// Welcome to your new TypeScript project\nconsole.log("Hello, World!");'
-    };
-    return starterCodes[language] || '// Start coding here\n';
-  };
+
   const joinRoom = (roomId) => {
     navigate(`/editor/${roomId}`);
   };
@@ -171,7 +138,9 @@ const Dashboard = () => {
     
     if (!window.confirm('Are you sure you want to delete this project? This will remove it for all team members.')) {
       return;
-    }    try {
+    }
+
+    try {
       // Get project data before deletion to access invitations
       const project = projects.find(p => p.id === projectId);
       
@@ -211,15 +180,6 @@ const Dashboard = () => {
       console.error('Error deleting project:', error);
       toast.error('Failed to delete project');
     }
-  };  const getLanguageIcon = (language) => {
-    const icons = {
-      javascript: '🟨',
-      python: '🐍',
-      cpp: '⚡',
-      c: '🔧',
-      typescript: '🔷'
-    };
-    return icons[language] || '📄';
   };
 
   const formatDate = (timestamp) => {
@@ -329,9 +289,7 @@ const Dashboard = () => {
                 <p className="text-2xl font-bold">{projects.length}</p>
               </div>
             </div>
-          </div>
-
-          <div className="bg-[#111119] border border-gray-800 rounded-lg p-6">
+          </div>          <div className="bg-[#111119] border border-gray-800 rounded-lg p-6">
             <div className="flex items-center">
               <div className="p-2 bg-green-600/20 rounded-lg">
                 <svg className="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -339,8 +297,13 @@ const Dashboard = () => {
                 </svg>
               </div>
               <div className="ml-4">
-                <p className="text-sm text-gray-400">Languages Used</p>
-                <p className="text-2xl font-bold">{new Set(projects.map(p => p.language)).size}</p>
+                <p className="text-sm text-gray-400">Active Files</p>
+                <p className="text-2xl font-bold">
+                  {projects.reduce((total, project) => {
+                    // Count files in each project (we'll need to implement this later)
+                    return total + 1; // Placeholder for now
+                  }, 0)}
+                </p>
               </div>
             </div>
           </div>
@@ -358,24 +321,9 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Filters and Sort */}
+        </div>        {/* Filters and Sort */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 space-y-4 sm:space-y-0">
           <div className="flex items-center space-x-4">
-            <select
-              value={selectedLanguage}
-              onChange={(e) => setSelectedLanguage(e.target.value)}
-              className="px-3 py-2 bg-[#111119] border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-600"
-            >
-              <option value="all">All Languages</option>
-              {PROGRAMMING_LANGUAGES.map((lang) => (
-                <option key={lang} value={lang}>
-                  {lang.charAt(0).toUpperCase() + lang.slice(1)}
-                </option>
-              ))}
-            </select>
-
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
@@ -383,7 +331,6 @@ const Dashboard = () => {
             >
               <option value="recent">Most Recent</option>
               <option value="name">Name A-Z</option>
-              <option value="language">Language</option>
             </select>
           </div>
 
@@ -422,17 +369,18 @@ const Dashboard = () => {
                 className="group bg-[#111119] border border-gray-800 rounded-lg p-6 hover:border-violet-600/50 transition-all duration-200 hover:shadow-lg hover:shadow-violet-600/10"
               >
                 <div className="flex flex-col h-full">
-                  <div className="flex items-start justify-between mb-4">
-                    <div 
+                  <div className="flex items-start justify-between mb-4">                    <div 
                       className="flex items-center space-x-3 flex-1 min-w-0 cursor-pointer"
                       onClick={() => joinRoom(project.roomId)}
                     >
-                      <div className="text-2xl">{getLanguageIcon(project.language)}</div>
+                      <div className="text-2xl">📁</div>
                       <div className="min-w-0 flex-1">
                         <h3 className="text-lg font-semibold truncate group-hover:text-violet-400 transition-colors">
                           {project.name}
                         </h3>
-                        <p className="text-sm text-gray-400 capitalize">{project.language}</p>
+                        <p className="text-sm text-gray-400">
+                          {project.createdAt ? formatDate(project.createdAt) : 'No date'}
+                        </p>
                         {project.teamMembers && (
                           <p className="text-xs text-gray-500 mt-1">
                             {Object.keys(project.teamMembers).length} team member{Object.keys(project.teamMembers).length !== 1 ? 's' : ''}
@@ -520,8 +468,7 @@ const Dashboard = () => {
         {isModalOpen && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-[#111119] border border-gray-800 p-6 rounded-xl w-full max-w-md">
-              <h2 className="text-2xl font-bold mb-6">Create New Project</h2>
-              <form onSubmit={handleCreateProject} className="space-y-4">
+              <h2 className="text-2xl font-bold mb-6">Create New Project</h2>              <form onSubmit={handleCreateProject} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Project Name
@@ -534,23 +481,9 @@ const Dashboard = () => {
                     onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
                     required
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Programming Language
-                  </label>
-                  <select
-                    className="block w-full px-3 py-2.5 bg-[#1a1a23] text-white border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent"
-                    value={newProject.language}
-                    onChange={(e) => setNewProject({ ...newProject, language: e.target.value })}
-                  >
-                    {PROGRAMMING_LANGUAGES.map((lang) => (
-                      <option key={lang} value={lang}>
-                        {getLanguageIcon(lang)} {lang.charAt(0).toUpperCase() + lang.slice(1)}
-                      </option>
-                    ))}
-                  </select>
+                  <p className="text-xs text-gray-400 mt-1">
+                    File language will be automatically detected when you create files
+                  </p>
                 </div>
 
                 <div className="flex gap-3 pt-4">
