@@ -1,0 +1,116 @@
+import { languageExtensions } from "../../config/languages";
+
+const EditorHeader = ({
+    collaborators,
+    codeBlame,
+    language,
+    setLanguage,
+    unreadCount,
+    toggleChat,
+    navigate
+}) => {
+    return (
+        <div className="bg-[#111119] border-b border-gray-800 sticky top-0 z-40">
+            <div className="max-w-7xl mx-auto px-6 py-4">
+                <div className="flex items-center justify-between">
+                    {/* Logo and Project Info */}
+                    <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-gradient-to-r from-violet-600 to-purple-600 rounded-lg flex items-center justify-center">
+                                <span className="text-white font-bold text-sm">IC</span>
+                            </div>
+                            <div>
+                                <h1 className="text-xl font-bold">Code Editor</h1>
+                                <p className="text-xs text-gray-400">Team Collaboration</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Collaborators */}
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                            {collaborators.map((user) => (
+                                <div
+                                    key={user.id}
+                                    className="relative group"
+                                    title={`${user.name}\nLast active: ${new Date(user.lastActive).toLocaleString()}`}
+                                >
+                                    <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-gray-700 group-hover:border-violet-600 transition-colors">
+                                        <img
+                                            src={user.photoURL}
+                                            alt={user.name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                    {user.isCreator && (
+                                        <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-yellow-500 border-2 border-[#111119] rounded-full"></div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Last Editor Info */}
+                        {codeBlame.lastEditor && (
+                            <div className="hidden md:flex items-center text-sm text-gray-400">
+                                <span>Last edited by: </span>
+                                <div className="flex items-center gap-2 ml-2">
+                                    <img
+                                        src={codeBlame.lastEditor.userPhoto}
+                                        alt={codeBlame.lastEditor.userName}
+                                        className="w-5 h-5 rounded-full"
+                                    />
+                                    <span>{codeBlame.lastEditor.userName}</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Controls */}
+                    <div className="flex items-center space-x-3">
+                        {/* Chat Toggle Button */}
+                        <button
+                            onClick={toggleChat}
+                            className={`relative p-2 bg-[#1a1a23] border border-gray-700 rounded-lg hover:bg-[#2a2a35] transition-colors ${unreadCount > 0 ? 'chat-notification' : ''}`}
+                            title="Toggle Chat"
+                        >
+                            <svg className="h-5 w-5 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            {unreadCount > 0 && (
+                                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                    {unreadCount > 9 ? '9+' : unreadCount}
+                                </span>
+                            )}
+                        </button>
+
+                        {/* Language Selector */}
+                        <select
+                            value={language}
+                            onChange={(e) => setLanguage(e.target.value)}
+                            className="px-3 py-2 bg-[#1a1a23] border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-600"
+                        >
+                            {Object.keys(languageExtensions).map((lang) => (
+                                <option key={lang} value={lang}>
+                                    {lang.charAt(0).toUpperCase() + lang.slice(1)}
+                                </option>
+                            ))}
+                        </select>
+
+                        {/* Back Button */}
+                        <button
+                            onClick={() => navigate('/dashboard')}
+                            className="flex items-center space-x-2 px-4 py-2 bg-[#1a1a23] text-gray-300 border border-gray-700 rounded-lg hover:bg-[#2a2a35] hover:text-white transition-colors text-sm font-medium"
+                        >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            </svg>
+                            <span>Back</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default EditorHeader;
