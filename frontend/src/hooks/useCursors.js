@@ -33,10 +33,12 @@ export const useCursors = (roomId) => {
             const userCursorRef = ref(database, `rooms/${roomId}/cursors/${auth.currentUser.uid}`);
             remove(userCursorRef);
         };
-    }, [roomId]);
+    }, [roomId]);    // Track typing state
+    const [isTyping, setIsTyping] = useState(false);
+    const typingTimeoutRef = useRef(null);
 
     // Real-time cursor position update with minimal throttling
-    const updateCursorPosition = useCallback((x, y, editorRect) => {
+    const updateCursorPosition = useCallback((x, y, editorRect, cursorState = 'normal') => {
         if (!roomId || !editorRect) return;
 
         // Calculate relative position within the editor
@@ -47,7 +49,8 @@ export const useCursors = (roomId) => {
         const currentPos = { x: relativeX, y: relativeY };
         if (lastPositionRef.current && 
             Math.abs(lastPositionRef.current.x - relativeX) < 0.1 && 
-            Math.abs(lastPositionRef.current.y - relativeY) < 0.1) {
+            Math.abs(lastPositionRef.current.y - relativeY) < 0.1 &&
+            cursorState === 'normal') {
             return;
         }
 
@@ -61,11 +64,10 @@ export const useCursors = (roomId) => {
                 "https://api.dicebear.com/7.x/avatars/svg?seed=" + auth.currentUser.uid,
             x: relativeX,
             y: relativeY,
+            state: cursorState, // 'normal', 'typing'
             timestamp: Date.now()
         });
-    }, [roomId]);
-
-    // High-frequency mouse move handler using requestAnimationFrame
+    }, [roomId]);    // High-frequency mouse move handler using requestAnimationFrame
     const handleMouseMove = useCallback((event) => {
         if (!editorElement) return;
 
@@ -84,10 +86,51 @@ export const useCursors = (roomId) => {
                 event.clientY >= editorRect.top && 
                 event.clientY <= editorRect.bottom) {
                 
-                updateCursorPosition(event.clientX, event.clientY, editorRect);
+                const cursorState = isTyping ? 'typing' : 'normal';
+                updateCursorPosition(event.clientX, event.clientY, editorRect, cursorState);
             }
         });
-    }, [editorElement, updateCursorPosition]);
+    }, [editorElement, updateCursorPosition, isTyping]);
+
+    // Handle typing state detection
+    const handleTyping = useCallback(() => {
+        setIsTyping(true);
+        
+        // Clear existing timeout
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+        
+        // Set timeout to reset typing state after 2 seconds of inactivity
+        typingTimeoutRef.current = setTimeout(() => {
+            setIsTyping(false);
+        }, 2000);
+    }, []);    // Set up editor content change detection for typing state
+    useEffect(() => {
+        if (!editorElement) return;
+
+        const handleKeyPress = () => {
+            handleTyping();
+        };
+
+        const handleInput = () => {
+            handleTyping();
+        };
+
+        const handleTypingEvent = () => {
+            handleTyping();
+        };
+
+        editorElement.addEventListener('keydown', handleKeyPress);
+        editorElement.addEventListener('input', handleInput);
+        editorElement.addEventListener('typing', handleTypingEvent);
+
+        return () => {
+            editorElement.removeEventListener('keydown', handleKeyPress);
+            editorElement.removeEventListener('input', handleInput);
+            editorElement.removeEventListener('typing', handleTypingEvent);
+        };
+    }, [editorElement, handleTyping]);
 
     // Set up mouse tracking
     useEffect(() => {
@@ -102,15 +145,16 @@ export const useCursors = (roomId) => {
         };
 
         editorElement.addEventListener('mousemove', handleMouseMove);
-        editorElement.addEventListener('mouseleave', handleMouseLeave);
-
-        return () => {
+        editorElement.addEventListener('mouseleave', handleMouseLeave);        return () => {
             editorElement.removeEventListener('mousemove', handleMouseMove);
             editorElement.removeEventListener('mouseleave', handleMouseLeave);
             
-            // Clean up animation frame
+            // Clean up animation frame and typing timeout
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
+            }
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current);
             }
         };
     }, [editorElement, handleMouseMove]);

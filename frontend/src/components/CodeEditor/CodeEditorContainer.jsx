@@ -147,7 +147,14 @@ const CodeEditorContainer = () => {
                             codeBlame={codeBlame}
                             lineBlameData={lineBlameData}
                             comments={comments}
-                            handleCodeChange={handleCodeChange}
+                            handleCodeChange={(value) => {
+                                handleCodeChange(value);
+                                // Trigger typing state for cursors when code changes
+                                if (editorElementRef) {
+                                    const event = new CustomEvent('typing', { bubbles: true });
+                                    editorElementRef.dispatchEvent(event);
+                                }
+                            }}
                             handleStartComment={handleStartComment}
                             setActiveComment={setActiveComment}
                             setEditorElement={setEditorElementRef}

@@ -51,69 +51,112 @@ const CursorOverlay = ({ userCursors, editorElement }) => {
                 }
 
                 const isFading = fadingCursors.has(userId);
+                const cursorState = cursor.state || 'normal';
 
                 return (
                     <div
                         key={userId}
-                        className={`absolute collaborative-cursor cursor-fade-in ${isFading ? 'opacity-50' : 'opacity-100'}`}                        style={{
+                        className={`absolute collaborative-cursor cursor-fade-in ${isFading ? 'opacity-50' : 'opacity-100'}`}
+                        style={{
                             left: `${absoluteX}px`,
                             top: `${absoluteY}px`,
                             transform: 'translate(-2px, -2px)',
                             transition: 'left 50ms ease-out, top 50ms ease-out, opacity 1s ease-out',
                         }}
                     >
+                        {/* User name label - moved to top */}
+                        <div
+                            className="absolute -top-10 left-0 px-2 py-1 rounded-md text-xs font-medium text-white shadow-lg whitespace-nowrap cursor-label"
+                            style={{
+                                backgroundColor: getCursorColor(userId),
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                minWidth: '60px',
+                                maxWidth: '150px'
+                            }}
+                        >
+                            <div className="flex items-center gap-1.5">
+                                <img
+                                    src={cursor.userPhoto}
+                                    alt={cursor.userName}
+                                    className="w-3 h-3 rounded-full border border-white/20 flex-shrink-0"
+                                    onError={(e) => {
+                                        e.target.src = `https://api.dicebear.com/7.x/avatars/svg?seed=${userId}`;
+                                    }}
+                                />
+                                <span className="text-xs font-semibold truncate">
+                                    {cursor.userName || 'Anonymous'}
+                                </span>                                {/* Typing indicator */}
+                                {cursorState === 'typing' && (
+                                    <div className="flex items-center gap-0.5 ml-1">
+                                        <div className="w-1 h-1 bg-white rounded-full typing-dot"></div>
+                                        <div className="w-1 h-1 bg-white rounded-full typing-dot"></div>
+                                        <div className="w-1 h-1 bg-white rounded-full typing-dot"></div>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            {/* Small triangle pointer pointing down */}
+                            <div 
+                                className="absolute top-full left-1/2 transform -translate-x-1/2 w-2 h-2 rotate-45"
+                                style={{ backgroundColor: getCursorColor(userId) }}
+                            />
+                        </div>
+
                         {/* Cursor pointer */}
                         <div className="relative">
-                            {/* Cursor SVG */}
-                            <svg
-                                width="18"
-                                height="18"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                className="drop-shadow-lg filter"
-                                style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
-                            >
-                                {/* Cursor arrow */}
-                                <path
-                                    d="M5 3L19 12L12 14L9 21L5 3Z"
-                                    fill={getCursorColor(userId)}
-                                    stroke="#ffffff"
-                                    strokeWidth="1.5"
-                                    strokeLinejoin="round"
-                                />
-                            </svg>
-
-                            {/* User name label */}
-                            <div
-                                className="absolute top-4 left-3 px-2 py-1 rounded-md text-xs font-medium text-white shadow-lg whitespace-nowrap cursor-label"
-                                style={{
-                                    backgroundColor: getCursorColor(userId),
-                                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    minWidth: '60px',
-                                    maxWidth: '150px'
-                                }}
-                            >
-                                <div className="flex items-center gap-1.5">
-                                    <img
-                                        src={cursor.userPhoto}
-                                        alt={cursor.userName}
-                                        className="w-3 h-3 rounded-full border border-white/20 flex-shrink-0"
-                                        onError={(e) => {
-                                            e.target.src = `https://api.dicebear.com/7.x/avatars/svg?seed=${userId}`;
-                                        }}
+                            {cursorState === 'typing' ? (
+                                // Typing cursor - text cursor with blinking line
+                                <div className="relative">
+                                    <svg
+                                        width="18"
+                                        height="18"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        className="drop-shadow-lg filter"
+                                        style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
+                                    >
+                                        {/* Text cursor I-beam */}
+                                        <path
+                                            d="M8 4H16M8 20H16M12 4V20"
+                                            stroke={getCursorColor(userId)}
+                                            strokeWidth="2.5"
+                                            strokeLinecap="round"
+                                            fill="none"
+                                        />
+                                        <path
+                                            d="M8 4H16M8 20H16M12 4V20"
+                                            stroke="#ffffff"
+                                            strokeWidth="1"
+                                            strokeLinecap="round"
+                                            fill="none"
+                                        />
+                                    </svg>                                    {/* Blinking line indicator */}
+                                    <div 
+                                        className="absolute top-1 left-2.5 w-0.5 h-4 typing-cursor-blink"
+                                        style={{ backgroundColor: getCursorColor(userId) }}
                                     />
-                                    <span className="text-xs font-semibold truncate">
-                                        {cursor.userName || 'Anonymous'}
-                                    </span>
                                 </div>
-                                
-                                {/* Small triangle pointer */}
-                                <div 
-                                    className="absolute -bottom-1 left-2 w-2 h-2 rotate-45"
-                                    style={{ backgroundColor: getCursorColor(userId) }}
-                                />
-                            </div>
+                            ) : (
+                                // Normal cursor - arrow pointer
+                                <svg
+                                    width="18"
+                                    height="18"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    className="drop-shadow-lg filter"
+                                    style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
+                                >
+                                    {/* Cursor arrow */}
+                                    <path
+                                        d="M5 3L19 12L12 14L9 21L5 3Z"
+                                        fill={getCursorColor(userId)}
+                                        stroke="#ffffff"
+                                        strokeWidth="1.5"
+                                        strokeLinejoin="round"
+                                    />
+                                </svg>
+                            )}
                         </div>
                     </div>
                 );

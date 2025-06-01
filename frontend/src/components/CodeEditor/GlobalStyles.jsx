@@ -129,7 +129,7 @@ export const GlobalStyles = () => {
             @keyframes labelSlideIn {
                 from {
                     opacity: 0;
-                    transform: translateY(-5px);
+                    transform: translateY(5px);
                 }
                 to {
                     opacity: 1;
@@ -137,8 +137,43 @@ export const GlobalStyles = () => {
                 }
             }
 
+            /* Typing cursor animation */
+            .typing-cursor-blink {
+                animation: typingBlink 1s infinite;
+            }
+
+            @keyframes typingBlink {
+                0%, 50% { opacity: 1; }
+                51%, 100% { opacity: 0; }
+            }
+
+            /* Typing indicator dots animation */
+            .typing-dot {
+                animation: typingDot 1.4s infinite ease-in-out;
+            }
+
+            .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+            .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+            @keyframes typingDot {
+                0%, 80%, 100% {
+                    transform: scale(0.8);
+                    opacity: 0.5;
+                }
+                40% {
+                    transform: scale(1);
+                    opacity: 1;
+                }
+            }
+
             /* Improve CodeMirror cursor tracking */
             .cm-editor {
+                position: relative;
+            }
+
+            .cm-content {
+                position: relative;
+            }
                 position: relative;
             }
 
