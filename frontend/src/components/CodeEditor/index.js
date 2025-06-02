@@ -6,6 +6,8 @@ export { default as CommentsSystem } from './CommentsSystem';
 export { default as CodeEditorPanel } from './CodeEditorPanel';
 export { default as EnhancedCodeEditorPanel } from './EnhancedCodeEditorPanel';
 export { default as EditorFeaturesPanel } from './EditorFeaturesPanel';
+export { default as TerminalPanel } from './TerminalPanel';
+export { default as ControlPanel } from './ControlPanel';
+// Legacy components (kept for compatibility)
 export { default as OutputPanel } from './OutputPanel';
 export { default as InputPanel } from './InputPanel';
-export { default as ControlPanel } from './ControlPanel';

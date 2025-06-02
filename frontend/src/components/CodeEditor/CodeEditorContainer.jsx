@@ -9,8 +9,7 @@ import EditorHeader from "./EditorHeader";
 import ChatPanel from "./ChatPanel";
 import CodeEditorPanel from "./CodeEditorPanel";
 import EnhancedCodeEditorPanel from "./EnhancedCodeEditorPanel";
-import InputPanel from "./InputPanel";
-import OutputPanel from "./OutputPanel";
+import TerminalPanel from "./TerminalPanel";
 import ControlPanel from "./ControlPanel";
 import CommentsSystem from "./CommentsSystem";
 import FileExplorer from "../FileExplorer";
@@ -185,70 +184,79 @@ const CodeEditorContainer = () => {
                         activeFile={activeFile}
                         onSelectFile={setActiveFile}
                         onCloseFile={closeFile}
-                    />
+                    />                    {/* Editor Content - Improved Layout */}
+                    <div className="flex-1 p-4">
+                        <div className="h-full flex flex-col gap-4">
+                            {/* Main Editor Area - Takes Most Space */}
+                            <div className="flex-1 min-h-0 grid grid-cols-4 gap-4">
+                                {/* Left Panel - Enhanced Editor (3/4 width) */}
+                                <div className="col-span-3 flex flex-col gap-4">
+                                    {/* Enhanced Code Editor with new features */}
+                                    <EnhancedCodeEditorPanel
+                                        code={code}
+                                        language={language}
+                                        codeBlame={codeBlame}
+                                        lineBlameData={lineBlameData}
+                                        comments={comments}
+                                        activeFile={activeFile}
+                                        handleCodeChange={(value) => {
+                                            handleCodeChange(value);
+                                            // Trigger typing state for cursors when code changes
+                                            if (editorElementRef) {
+                                                const event = new CustomEvent('typing', { bubbles: true });
+                                                editorElementRef.dispatchEvent(event);
+                                            }
+                                        }}
+                                        handleStartComment={handleStartComment}
+                                        setActiveComment={setActiveComment}
+                                        setEditorElement={setEditorElementRef}
+                                    />
+                                </div>
 
-                    {/* Editor Content */}
-                    <div className="flex-1 p-6">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-                            {/* Left Panel - Editor and Input */}
-                            <div className="flex flex-col gap-6">                                {/* Enhanced Code Editor with new features */}
-                                <EnhancedCodeEditorPanel
-                                    code={code}
-                                    language={language}
-                                    codeBlame={codeBlame}
-                                    lineBlameData={lineBlameData}
-                                    comments={comments}
-                                    activeFile={activeFile}
-                                    handleCodeChange={(value) => {
-                                        handleCodeChange(value);
-                                        // Trigger typing state for cursors when code changes
-                                        if (editorElementRef) {
-                                            const event = new CustomEvent('typing', { bubbles: true });
-                                            editorElementRef.dispatchEvent(event);
-                                        }
-                                    }}
-                                    handleStartComment={handleStartComment}
-                                    setActiveComment={setActiveComment}
-                                    setEditorElement={setEditorElementRef}
-                                />
-
-                                {/* Comments System */}
-                                <CommentsSystem
-                                    comments={comments}
-                                    activeComment={activeComment}
-                                    setActiveComment={setActiveComment}
-                                    newCommentLine={newCommentLine}
-                                    setNewCommentLine={setNewCommentLine}
-                                    newCommentText={newCommentText}
-                                    setNewCommentText={setNewCommentText}
-                                    newReplyText={newReplyText}
-                                    setNewReplyText={setNewReplyText}
-                                    handleAddComment={handleAddComment}
-                                    handleAddReply={handleAddReply}
-                                    handleDeleteComment={handleDeleteComment}
-                                    handleDeleteReply={handleDeleteReply}
-                                    calculateCommentPosition={calculateCommentPosition}
-                                />
-
-                                {/* Input Section */}
-                                <InputPanel
-                                    input={input}
-                                    setInput={setInput}
-                                />
+                                {/* Right Panel - Controls (1/4 width) */}
+                                <div className="col-span-1 flex flex-col gap-4">
+                                    {/* Control Panel */}
+                                    <ControlPanel
+                                        executeCode={executeCode}
+                                        isExecuting={isExecuting}
+                                    />
+                                </div>
                             </div>
 
-                            {/* Right Panel - Controls and Output */}
-                            <div className="flex flex-col gap-6">
-                                {/* Control Panel */}
-                                <ControlPanel
-                                    executeCode={executeCode}
-                                    isExecuting={isExecuting}
-                                />
+                            {/* Bottom Section - Terminal and Comments */}
+                            <div className="h-80 flex flex-col gap-4">
+                                {/* Terminal Panel - Replaces Input and Output */}
+                                <div className="flex-1 min-h-0">
+                                    <TerminalPanel
+                                        output={output}
+                                        input={input}
+                                        setInput={setInput}
+                                        executeCode={executeCode}
+                                        isExecuting={isExecuting}
+                                        language={language}
+                                        activeFile={activeFile}
+                                    />
+                                </div>
 
-                                {/* Output Section */}
-                                <OutputPanel
-                                    output={output}
-                                />
+                                {/* Comments System - Collapsible */}
+                                <div className="h-auto max-h-32 overflow-y-auto">
+                                    <CommentsSystem
+                                        comments={comments}
+                                        activeComment={activeComment}
+                                        setActiveComment={setActiveComment}
+                                        newCommentLine={newCommentLine}
+                                        setNewCommentLine={setNewCommentLine}
+                                        newCommentText={newCommentText}
+                                        setNewCommentText={setNewCommentText}
+                                        newReplyText={newReplyText}
+                                        setNewReplyText={setNewReplyText}
+                                        handleAddComment={handleAddComment}
+                                        handleAddReply={handleAddReply}
+                                        handleDeleteComment={handleDeleteComment}
+                                        handleDeleteReply={handleDeleteReply}
+                                        calculateCommentPosition={calculateCommentPosition}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
