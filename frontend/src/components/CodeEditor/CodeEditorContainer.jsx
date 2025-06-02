@@ -184,13 +184,13 @@ const CodeEditorContainer = () => {
                         activeFile={activeFile}
                         onSelectFile={setActiveFile}
                         onCloseFile={closeFile}
-                    />                    {/* Editor Content - Improved Layout */}
-                    <div className="flex-1 p-4">
-                        <div className="h-full flex flex-col gap-4">
+                    />                    {/* Editor Content - Compact Layout */}
+                    <div className="flex-1 p-2">
+                        <div className="h-full flex flex-col gap-2">
                             {/* Main Editor Area - Takes Most Space */}
-                            <div className="flex-1 min-h-0 grid grid-cols-4 gap-4">
-                                {/* Left Panel - Enhanced Editor (3/4 width) */}
-                                <div className="col-span-3 flex flex-col gap-4">
+                            <div className="flex-1 min-h-0 grid grid-cols-5 gap-2">
+                                {/* Left Panel - Enhanced Editor (4/5 width) */}
+                                <div className="col-span-4 flex flex-col gap-2">
                                     {/* Enhanced Code Editor with new features */}
                                     <EnhancedCodeEditorPanel
                                         code={code}
@@ -211,22 +211,18 @@ const CodeEditorContainer = () => {
                                         setActiveComment={setActiveComment}
                                         setEditorElement={setEditorElementRef}
                                     />
-                                </div>
-
-                                {/* Right Panel - Controls (1/4 width) */}
-                                <div className="col-span-1 flex flex-col gap-4">
+                                </div>                                {/* Right Panel - Controls (1/5 width) */}
+                                <div className="col-span-1 flex flex-col gap-2">
                                     {/* Control Panel */}
                                     <ControlPanel
                                         executeCode={executeCode}
                                         isExecuting={isExecuting}
                                     />
                                 </div>
-                            </div>
-
-                            {/* Bottom Section - Terminal and Comments */}
-                            <div className="h-80 flex flex-col gap-4">
-                                {/* Terminal Panel - Replaces Input and Output */}
-                                <div className="flex-1 min-h-0">
+                            </div>                            {/* Bottom Section - Terminal and Comments */}
+                            <div className="h-64 flex flex-col gap-2">
+                                {/* Terminal Panel - Flexible height */}
+                                <div className="flex-1 min-h-0 max-h-48">
                                     <TerminalPanel
                                         output={output}
                                         input={input}
@@ -238,8 +234,8 @@ const CodeEditorContainer = () => {
                                     />
                                 </div>
 
-                                {/* Comments System - Collapsible */}
-                                <div className="h-auto max-h-32 overflow-y-auto">
+                                {/* Comments System - Compact */}
+                                <div className="h-16 overflow-y-auto">
                                     <CommentsSystem
                                         comments={comments}
                                         activeComment={activeComment}

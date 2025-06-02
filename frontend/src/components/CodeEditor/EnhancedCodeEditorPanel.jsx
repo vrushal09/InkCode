@@ -88,39 +88,37 @@ const EnhancedCodeEditorPanel = ({
         editorViewRef.current = view;
     };
 
-    return (
-        <div className="flex-1 bg-[#111119] border border-gray-800 rounded-lg overflow-hidden relative">
-            {/* Header with enhanced controls */}
-            <div className="p-4 border-b border-gray-800">
+    return (        <div className="h-full bg-[#111119] border border-gray-800 rounded-lg overflow-hidden relative">
+            {/* Header with enhanced controls - Compact */}
+            <div className="p-2 border-b border-gray-800">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                        <h3 className="text-lg font-semibold flex items-center">
-                            <svg className="h-5 w-5 mr-2 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <h3 className="text-sm font-semibold flex items-center">
+                            <svg className="h-4 w-4 mr-1 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                             </svg>
-                            {activeFile ? activeFile.split('/').pop() : 'Code Editor'}
-                            {activeFile && (
-                                <span className="ml-2 text-sm text-gray-400 font-normal">
+                            {activeFile ? activeFile.split('/').pop() : 'Code Editor'}                            {activeFile && (
+                                <span className="ml-1 text-xs text-gray-400 font-normal">
                                     ({language})
                                 </span>
                             )}
                         </h3>
                         {activeFile && (
-                            <p className="text-sm text-gray-500 ml-4">
+                            <p className="text-xs text-gray-500 ml-2">
                                 {activeFile}
                             </p>
                         )}
                     </div>
                     
-                    {/* Enhanced controls */}
-                    <div className="flex items-center gap-2">
+                    {/* Enhanced controls - Compact */}
+                    <div className="flex items-center gap-1">
                         {/* Search & Replace Button */}
                         <button
                             onClick={handleToggleSearch}
-                            className="flex items-center gap-1 px-3 py-1.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors"
+                            className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors"
                             title="Search & Replace (Ctrl+F)"
                         >
-                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                             Search
@@ -129,10 +127,10 @@ const EnhancedCodeEditorPanel = ({
                         {/* Format Code Button */}
                         <button
                             onClick={handleFormatCode}
-                            className="flex items-center gap-1 px-3 py-1.5 text-xs bg-violet-700 hover:bg-violet-600 text-white rounded transition-colors"
+                            className="flex items-center gap-1 px-2 py-1 text-xs bg-violet-700 hover:bg-violet-600 text-white rounded transition-colors"
                             title="Format Code (Shift+Alt+F)"
                         >
-                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                             Format
@@ -141,14 +139,14 @@ const EnhancedCodeEditorPanel = ({
                         {/* Minimap Toggle */}
                         <button
                             onClick={() => setShowMinimap(!showMinimap)}
-                            className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded transition-colors ${
+                            className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${
                                 showMinimap 
                                     ? 'bg-green-700 hover:bg-green-600 text-white' 
                                     : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
                             }`}
                             title="Toggle Minimap"
                         >
-                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
                             </svg>
                             Minimap
@@ -157,30 +155,30 @@ const EnhancedCodeEditorPanel = ({
                 </div>
             </div>
 
-            {/* Feature descriptions */}
-            <div className="px-4 py-2 bg-gray-800/50 border-b border-gray-700">
-                <div className="flex flex-wrap gap-4 text-xs text-gray-400">
+            {/* Feature descriptions - Compact */}
+            <div className="px-2 py-1 bg-gray-800/50 border-b border-gray-700">
+                <div className="flex flex-wrap gap-2 text-xs text-gray-400">
                     <span className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        Autocomplete (Ctrl+Space)
+                        <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                        Autocomplete
                     </span>
                     <span className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        Search & Replace (Ctrl+F)
+                        <div className="w-1 h-1 bg-blue-500 rounded-full"></div>
+                        Search
                     </span>
                     <span className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                        Code Formatting (Shift+Alt+F)
+                        <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
+                        Format
                     </span>
                     <span className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                        Minimap View
+                        <div className="w-1 h-1 bg-yellow-500 rounded-full"></div>
+                        Minimap
                     </span>
                 </div>
             </div>
 
-            {/* Enhanced Editor */}
-            <div className={`${showMinimap ? 'relative' : ''} h-[400px] overflow-hidden`} ref={editorContainerRef}>
+            {/* Enhanced Editor - Flexible height */}
+            <div className={`${showMinimap ? 'relative' : ''} flex-1 overflow-hidden`} ref={editorContainerRef}>
                 <div className={`${showMinimap ? 'pr-32' : ''} h-full`}>
                     <CodeMirror
                         value={code}
@@ -247,17 +245,14 @@ const EnhancedCodeEditorPanel = ({
                         </div>
                     </div>
                 )}
-            </div>
-
-            {/* Help text */}
-            <div className="px-4 py-2 bg-gray-800/30 border-t border-gray-700">
+            </div>            {/* Help text - Compact */}
+            <div className="px-2 py-1 bg-gray-800/30 border-t border-gray-700">
                 <div className="text-xs text-gray-500">
-                    <span className="font-medium text-gray-400">Keyboard shortcuts:</span>
-                    <span className="ml-2">Ctrl+F (Search)</span>
-                    <span className="ml-2">Shift+Alt+F (Format)</span>
-                    <span className="ml-2">Ctrl+Space (Autocomplete)</span>
-                    <span className="ml-2">Ctrl+Z/Y (Undo/Redo)</span>
-                    <span className="ml-2">Tab (Indent)</span>
+                    <span className="font-medium text-gray-400">Shortcuts:</span>
+                    <span className="ml-1">Ctrl+F</span>
+                    <span className="ml-1">Shift+Alt+F</span>
+                    <span className="ml-1">Ctrl+Space</span>
+                    <span className="ml-1">Ctrl+Z/Y</span>
                 </div>
             </div>
         </div>
