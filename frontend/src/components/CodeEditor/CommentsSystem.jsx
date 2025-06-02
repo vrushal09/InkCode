@@ -26,23 +26,90 @@ const CommentsSystem = ({
                 commentInputRef.current.focus();
             }, 10);
         }
-    }, [newCommentLine]);
+    }, [newCommentLine]);    // Calculate safe positioning within viewport
+    const getViewportSafePosition = () => {
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+        
+        // Account for typical header height and some padding
+        const headerHeight = 80; // Estimate for editor header
+        const padding = 40;
+        const availableHeight = viewportHeight - headerHeight - padding;
+        
+        // Form dimensions
+        const formWidth = Math.min(320, viewportWidth * 0.9);
+        const maxFormHeight = Math.min(300, availableHeight * 0.8);
+        
+        // Position in the center, but ensure it doesn't go below viewport
+        const topPosition = Math.max(
+            headerHeight + 20, // Don't go above header
+            Math.min(
+                viewportHeight * 0.4, // Prefer upper-center
+                viewportHeight - maxFormHeight - 20 // But ensure it fits
+            )
+        );
+        
+        return {
+            top: `${topPosition}px`,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: `${formWidth}px`,
+            maxHeight: `${maxFormHeight}px`
+        };
+    };    // Calculate position for comment threads
+    const getCommentThreadPosition = () => {
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+        
+        const headerHeight = 80;
+        const padding = 40;
+        const availableHeight = viewportHeight - headerHeight - padding;
+        
+        const threadWidth = Math.min(320, viewportWidth * (viewportWidth < 768 ? 0.85 : 0.3));
+        const maxThreadHeight = Math.min(400, availableHeight * 0.8);
+        
+        const topPosition = Math.max(
+            headerHeight + 20,
+            Math.min(
+                viewportHeight * 0.3,
+                viewportHeight - maxThreadHeight - 20
+            )
+        );
+        
+        return {
+            top: `${topPosition}px`,
+            right: viewportWidth < 768 ? '10px' : '20px',
+            width: `${threadWidth}px`,
+            maxHeight: `${maxThreadHeight}px`
+        };
+    };    return (
+        <div className="relative h-full">
+            {/* Backdrop for modals */}
+            {(newCommentLine !== null || activeComment !== null) && (
+                <div className="fixed inset-0 bg-black/20 z-40" onClick={() => {
+                    setNewCommentLine(null);
+                    setActiveComment(null);
+                }} />
+            )}
 
-    return (
-        <>
-            {/* New comment form */}
+            {/* New comment form - Fixed positioning to stay in viewport */}
             {newCommentLine !== null && (
                 <div
-                    className="absolute bg-[#111119] border border-gray-700 rounded-lg shadow-lg p-4 z-10"
-                    style={{
-                        top: `${(newCommentLine + 1) * 21 + 64}px`,
-                        right: "20px",
-                        transform: 'translateY(-50%)',
-                        width: '280px',
-                        maxHeight: '80vh',
-                        overflowY: 'auto'
-                    }}
+                    className="fixed bg-[#111119] border border-gray-700 rounded-lg shadow-xl p-4 z-50 overflow-y-auto"
+                    style={getViewportSafePosition()}
+                    onClick={(e) => e.stopPropagation()}
                 >
+                    <div className="flex justify-between items-center mb-3">
+                        <h3 className="text-sm font-medium text-white">
+                            Add comment to line {newCommentLine + 1}
+                        </h3>
+                        <button
+                            className="p-1 text-gray-400 hover:text-white rounded transition-colors"
+                            onClick={() => setNewCommentLine(null)}
+                        >
+                            ✕
+                        </button>
+                    </div>
                     <textarea
                         ref={commentInputRef}
                         className="w-full p-3 bg-[#1a1a23] border border-gray-700 rounded-lg resize-none text-sm focus:outline-none focus:ring-2 focus:ring-violet-600 text-white placeholder-gray-400"
@@ -66,19 +133,12 @@ const CommentsSystem = ({
                         </button>
                     </div>
                 </div>
-            )}
-
-            {/* Comment thread view */}
+            )}            {/* Comment thread view - Fixed positioning with smart placement */}
             {activeComment !== null && comments[activeComment] && (
                 <div
-                    className="absolute bg-[#111119] border border-gray-700 rounded-lg shadow-lg p-4 z-10 overflow-y-auto"
-                    style={{
-                        ...calculateCommentPosition(activeComment),
-                        right: "20px",
-                        width: '320px',
-                        maxHeight: '80vh',
-                        maxWidth: '90vw'
-                    }}
+                    className="fixed bg-[#111119] border border-gray-700 rounded-lg shadow-xl p-4 z-50 overflow-y-auto"
+                    style={getCommentThreadPosition()}
+                    onClick={(e) => e.stopPropagation()}
                 >
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-sm font-medium text-white">
@@ -114,7 +174,33 @@ const CommentsSystem = ({
                     </button>
                 </div>
             )}
-        </>
+
+            {/* Comments summary for the compact area */}
+            <div className="h-full p-2 bg-[#111119] border border-gray-800 rounded-lg overflow-y-auto">
+                <h4 className="text-xs font-medium text-gray-400 mb-2">Comments</h4>
+                {Object.keys(comments).length === 0 ? (
+                    <p className="text-xs text-gray-500">No comments yet</p>
+                ) : (
+                    <div className="space-y-1">
+                        {Object.entries(comments).map(([lineNumber, lineComments]) => (
+                            <div 
+                                key={lineNumber}
+                                className="text-xs p-2 bg-[#1a1a23] rounded cursor-pointer hover:bg-[#2a2a35] transition-colors"
+                                onClick={() => setActiveComment(parseInt(lineNumber))}
+                            >
+                                <div className="flex justify-between items-center">
+                                    <span className="text-violet-400">Line {parseInt(lineNumber) + 1}</span>
+                                    <span className="text-gray-400">{Object.keys(lineComments).length} comment(s)</span>
+                                </div>
+                                <p className="text-gray-300 truncate mt-1">
+                                    {Object.values(lineComments)[0]?.text}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
     );
 };
 

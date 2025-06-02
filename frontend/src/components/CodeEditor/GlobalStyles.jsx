@@ -98,7 +98,38 @@ export const GlobalStyles = () => {
                 100% {
                     box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
                 }
-            }            /* Collaborative cursor styles */
+            }
+
+            /* Comment modal positioning safety */
+            .comment-modal {
+                position: fixed !important;
+                max-width: 90vw !important;
+                max-height: 70vh !important;
+                top: 50% !important;
+                left: 50% !important;
+                transform: translate(-50%, -50%) !important;
+                z-index: 50 !important;
+                overflow-y: auto !important;
+            }
+            
+            .comment-thread-modal {
+                position: fixed !important;
+                max-width: 30vw !important;
+                max-height: 70vh !important;
+                top: 20% !important;
+                right: 20px !important;
+                z-index: 50 !important;
+                overflow-y: auto !important;
+            }
+            
+            @media (max-width: 768px) {
+                .comment-thread-modal {
+                    max-width: 85vw !important;
+                    right: 10px !important;
+                }
+            }
+
+            /* Collaborative cursor styles */}
             .collaborative-cursor {
                 pointer-events: none;
                 z-index: 1000;
