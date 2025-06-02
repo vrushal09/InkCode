@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import EditorHeader from "./EditorHeader";
 import ChatPanel from "./ChatPanel";
 import CodeEditorPanel from "./CodeEditorPanel";
+import EnhancedCodeEditorPanel from "./EnhancedCodeEditorPanel";
 import InputPanel from "./InputPanel";
 import OutputPanel from "./OutputPanel";
 import ControlPanel from "./ControlPanel";
@@ -190,8 +191,8 @@ const CodeEditorContainer = () => {
                     <div className="flex-1 p-6">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
                             {/* Left Panel - Editor and Input */}
-                            <div className="flex flex-col gap-6">                                {/* Code Editor */}
-                                <CodeEditorPanel
+                            <div className="flex flex-col gap-6">                                {/* Enhanced Code Editor with new features */}
+                                <EnhancedCodeEditorPanel
                                     code={code}
                                     language={language}
                                     codeBlame={codeBlame}

@@ -1,3 +1,5 @@
+import EditorFeaturesPanel from './EditorFeaturesPanel';
+
 const EditorHeader = ({
     collaborators,
     codeBlame,
@@ -59,10 +61,12 @@ const EditorHeader = ({
                                 </div>
                             </div>
                         )}
-                    </div>
+                    </div>                    {/* Controls */}
+                    <div className="flex items-center space-x-3">
+                        {/* Editor Features Panel */}
+                        <EditorFeaturesPanel />
 
-                    {/* Controls */}
-                    <div className="flex items-center space-x-3">                        {/* Chat Toggle Button */}
+                        {/* Chat Toggle Button */}
                         <button
                             onClick={toggleChat}
                             className={`relative p-2 bg-[#1a1a23] border border-gray-700 rounded-lg hover:bg-[#2a2a35] transition-colors ${unreadCount > 0 ? 'chat-notification' : ''}`}
