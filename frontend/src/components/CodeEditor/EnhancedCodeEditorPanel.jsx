@@ -11,6 +11,7 @@ import {
 } from "../../extensions/editorExtensions";
 import { formatCode } from "../../utils/codeFormatter";
 import { openSearchPanel } from "@codemirror/search";
+import { useUserPreferences } from "../../contexts/UserPreferencesContext";
 
 const EnhancedCodeEditorPanel = ({
     code,
@@ -24,10 +25,16 @@ const EnhancedCodeEditorPanel = ({
     setEditorElement,
     activeFile
 }) => {
+    const { preferences } = useUserPreferences();
     const editorContainerRef = useRef(null);
     const editorViewRef = useRef(null);
-    const [showMinimap, setShowMinimap] = useState(true);
+    const [showMinimap, setShowMinimap] = useState(preferences.minimap);
     const [searchOpen, setSearchOpen] = useState(false);
+
+    // Update minimap state when preferences change
+    useEffect(() => {
+        setShowMinimap(preferences.minimap);
+    }, [preferences.minimap]);
 
     // Set up editor element reference for cursor tracking
     useEffect(() => {
@@ -179,27 +186,26 @@ const EnhancedCodeEditorPanel = ({
 
             {/* Enhanced Editor - Flexible height */}
             <div className={`${showMinimap ? 'relative' : ''} flex-1 overflow-hidden`} ref={editorContainerRef}>
-                <div className={`${showMinimap ? 'pr-32' : ''} h-full`}>
-                    <CodeMirror
+                <div className={`${showMinimap ? 'pr-32' : ''} h-full`}>                    <CodeMirror
                         value={code}
                         height="100%"
-                        theme="dark"
+                        theme={preferences.theme === 'dark' ? 'dark' : 'light'}
                         basicSetup={{
-                            lineNumbers: true,
+                            lineNumbers: preferences.lineNumbers,
                             foldGutter: true,
                             dropCursor: false,
                             allowMultipleSelections: true,
                             indentOnInput: true,
-                            bracketMatching: true,
+                            bracketMatching: preferences.bracketMatching,
                             closeBrackets: true,
-                            autocompletion: true,
-                            highlightActiveLine: true,
+                            autocompletion: preferences.autoCompletion,
+                            highlightActiveLine: preferences.highlightActiveLine,
                             searchKeymap: true,
                             history: true
                         }}
                         extensions={[
                             getLanguageExtension(),
-                            ...createEnhancedExtensions(language),
+                            ...createEnhancedExtensions(language, preferences),
                             createSearchReplaceExtension(),
                             blameTooltipExtension,
                             lineBlameTooltipExtension,

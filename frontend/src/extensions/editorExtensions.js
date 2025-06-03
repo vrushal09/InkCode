@@ -4,11 +4,11 @@ import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
 import { 
     EditorView, 
     keymap, 
-    lineNumbers, 
+    lineNumbers as lineNumbersExtension, 
     highlightActiveLineGutter,
     drawSelection,
     dropCursor,
-    highlightActiveLine
+    highlightActiveLine as highlightActiveLineExtension
 } from "@codemirror/view";
 import { 
     EditorState
@@ -17,7 +17,7 @@ import {
     defaultHighlightStyle, 
     syntaxHighlighting, 
     indentOnInput, 
-    bracketMatching
+    bracketMatching as bracketMatchingExtension
 } from "@codemirror/language";
 import { 
     defaultKeymap, 
@@ -153,18 +153,26 @@ export const formatCommand = (language) => ({
 });
 
 // Create enhanced editor extensions
-export const createEnhancedExtensions = (language = 'javascript') => {
-    return [
-        // Basic editor features
-        lineNumbers(),
+export const createEnhancedExtensions = (language = 'javascript', preferences = {}) => {
+    const {
+        fontSize = 14,
+        fontFamily = "'Fira Code', 'Consolas', 'Monaco', monospace",
+        tabSize = 4,
+        wordWrap = true,
+        lineNumbers = true,
+        autoCompletion = true,
+        bracketMatching = true,
+        highlightActiveLine = true,
+        indentWithTabs = false
+    } = preferences;    return [
+        // Basic editor features (conditionally applied based on preferences)
+        ...(lineNumbers ? [lineNumbersExtension()] : []),
         drawSelection(),
         dropCursor(),
-        EditorState.allowMultipleSelections.of(true),
-        indentOnInput(),
-        bracketMatching(),
+        EditorState.allowMultipleSelections.of(true),        indentOnInput(),
+        ...(bracketMatching ? [bracketMatchingExtension()] : []),
         closeBrackets(),
-        highlightActiveLine(),
-        highlightActiveLineGutter(),
+        ...(highlightActiveLine ? [highlightActiveLineExtension(), highlightActiveLineGutter()] : []),
         
         // Search and replace
         highlightSelectionMatches(),
@@ -172,30 +180,36 @@ export const createEnhancedExtensions = (language = 'javascript') => {
         // History and undo/redo
         history(),
         
-        // Enhanced autocomplete
-        createAutocompleteExtension(),
+        // Enhanced autocomplete (conditionally applied)
+        ...(autoCompletion ? [createAutocompleteExtension()] : []),
         
         // Syntax highlighting
         syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
         
-        // Key mappings
+        // Key mappings with preferences
         keymap.of([
             ...defaultKeymap,
             ...searchKeymap,
             ...historyKeymap,
             ...completionKeymap,
-            indentWithTab,
+            ...(indentWithTabs ? [indentWithTab] : []),
             formatCommand(language)
         ]),
+        
+        // Tab size configuration
+        EditorState.tabSize.of(tabSize),
+        
+        // Word wrap (conditionally applied)
+        ...(wordWrap ? [EditorView.lineWrapping] : []),
         
         // Minimap (basic implementation)
         minimapExtension,
         
-        // Enhanced editor theme
+        // Enhanced editor theme with user preferences
         EditorView.theme({
             "&": {
-                fontSize: "14px",
-                fontFamily: "'Fira Code', 'Consolas', 'Monaco', monospace"
+                fontSize: `${fontSize}px`,
+                fontFamily: fontFamily
             },
             ".cm-content": {
                 padding: "16px",
@@ -209,7 +223,7 @@ export const createEnhancedExtensions = (language = 'javascript') => {
                 borderRadius: "8px"
             },
             ".cm-scroller": {
-                fontFamily: "'Fira Code', 'Consolas', 'Monaco', monospace"
+                fontFamily: fontFamily
             },
             ".cm-searchMatch": {
                 backgroundColor: "#ffd70040",
@@ -224,8 +238,8 @@ export const createEnhancedExtensions = (language = 'javascript') => {
                 borderRadius: "4px"
             },
             ".cm-tooltip.cm-tooltip-autocomplete > ul": {
-                fontFamily: "'Fira Code', 'Consolas', 'Monaco', monospace",
-                fontSize: "13px"
+                fontFamily: fontFamily,
+                fontSize: `${Math.max(11, fontSize - 2)}px`
             },
             ".cm-tooltip.cm-tooltip-autocomplete > ul > li": {
                 padding: "4px 8px"

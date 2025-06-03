@@ -25,11 +25,15 @@ import { useFileSystem } from "../../hooks/useFileSystem";
 import { codeExecutionService } from "../../services/codeExecutionService";
 import { GlobalStyles } from "./GlobalStyles";
 import CursorOverlay from "../CursorOverlay";
+import { useUserPreferences } from "../../contexts/UserPreferencesContext";
 
 const CodeEditorContainer = () => {
     const navigate = useNavigate();
-    const { roomId } = useParams();    // File system state
-    const [isExplorerCollapsed, setIsExplorerCollapsed] = useState(false);
+    const { roomId } = useParams();
+    const { preferences } = useUserPreferences();
+
+    // File system state - Initialize from preferences
+    const [isExplorerCollapsed, setIsExplorerCollapsed] = useState(preferences.sidebarCollapsed);
 
     // File system hook
     const {

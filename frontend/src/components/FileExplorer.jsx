@@ -6,6 +6,7 @@ import {
     ChevronDoubleRightIcon 
 } from '@heroicons/react/24/outline';
 import FileNode from './FileNode';
+import { useUserPreferences } from '../contexts/UserPreferencesContext';
 
 const FileExplorer = ({ 
     fileTree, 
@@ -20,6 +21,7 @@ const FileExplorer = ({
     isCollapsed,
     onToggleCollapse
 }) => {
+    const { preferences, updatePreferences } = useUserPreferences();
     const [showNewFileInput, setShowNewFileInput] = useState(false);
     const [showNewFolderInput, setShowNewFolderInput] = useState(false);
     const [newItemName, setNewItemName] = useState('');
@@ -45,13 +47,18 @@ const FileExplorer = ({
             setShowNewFileInput(false);
             setShowNewFolderInput(false);
         }
+    };    // Handle toggling sidebar collapsed state and save preference
+    const handleToggleCollapse = () => {
+        const newCollapsedState = !isCollapsed;
+        onToggleCollapse();
+        updatePreferences({ sidebarCollapsed: newCollapsedState });
     };
 
     if (isCollapsed) {
         return (
             <div className="bg-gray-900 border-r border-gray-700 h-full w-12 flex flex-col items-center py-4">
                 <button
-                    onClick={onToggleCollapse}
+                    onClick={handleToggleCollapse}
                     className="p-2 hover:bg-gray-800 rounded transition-colors"
                     title="Expand Explorer"
                 >
@@ -86,9 +93,8 @@ const FileExplorer = ({
                         title="New Folder"
                     >
                         <FolderIcon className="w-4 h-4 text-violet-400" />
-                    </button>
-                    <button
-                        onClick={onToggleCollapse}
+                    </button>                    <button
+                        onClick={handleToggleCollapse}
                         className="p-1 hover:bg-gray-800/50 rounded transition-colors"
                         title="Collapse Explorer"
                     >

@@ -1,15 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { auth, database } from "../config/firebase";
 import { ref, onValue, set } from "firebase/database";
 import { toast } from "react-toastify";
 import { codeExecutionService } from "../services/codeExecutionService";
+import { useUserPreferences } from "../contexts/UserPreferencesContext";
 
 export const useCodeEditor = (roomId, activeFile, getFileContent, updateFileContent, getFileObject) => {
+    const { preferences } = useUserPreferences();
     const [code, setCode] = useState("");
     const [language, setLanguage] = useState("javascript");
     const [input, setInput] = useState("");
     const [output, setOutput] = useState("");
-    const [isExecuting, setIsExecuting] = useState(false);    // Load code from active file
+    const [isExecuting, setIsExecuting] = useState(false);
+    const autoSaveTimerRef = useRef(null);// Load code from active file
     useEffect(() => {
         if (activeFile && getFileContent && getFileObject) {
             const content = getFileContent(activeFile);
@@ -64,68 +67,108 @@ export const useCodeEditor = (roomId, activeFile, getFileContent, updateFileCont
         });
 
         return () => unsubscribe();
-    }, [roomId, activeFile]);    // Handle code changes with blame tracking
+    }, [roomId, activeFile]);    // Handle code changes with blame tracking and auto-save
     const handleCodeChange = (value) => {
         setCode(value);
         
-        // Update file content if we have an active file
-        if (activeFile && updateFileContent) {
-            updateFileContent(activeFile, value);
+        // Clear existing auto-save timer
+        if (autoSaveTimerRef.current) {
+            clearTimeout(autoSaveTimerRef.current);
         }
         
-        // Also update Firebase for backwards compatibility
-        if (roomId) {
-            const roomRef = ref(database, `rooms/${roomId}`);
-
-            // First read the current room data
-            onValue(roomRef, (snapshot) => {
-                const currentData = snapshot.val() || {};
-                const now = Date.now();
-
-                // Get old code lines and new code lines
-                const oldCode = currentData.code || "";
-                const oldLines = oldCode.split('\n');
-                const newLines = value.split('\n');
-
-                // Create or update the lineBlame object
-                const lineBlame = { ...(currentData.lineBlame || {}) };
-
-                // Track changed lines by comparing old and new code
-                for (let i = 0; i < newLines.length; i++) {
-                    // If line is new or changed, update blame data
-                    if (i >= oldLines.length || newLines[i] !== oldLines[i]) {
-                        lineBlame[i] = {
-                            userId: auth.currentUser.uid,
-                            userName: auth.currentUser.displayName || "Anonymous",
-                            userPhoto: auth.currentUser.photoURL ||
-                                "https://api.dicebear.com/7.x/avatars/svg?seed=" + auth.currentUser.uid,
-                            timestamp: now
-                        };
-                    }
+        // Auto-save functionality based on preferences
+        if (preferences.autoSave) {
+            autoSaveTimerRef.current = setTimeout(() => {
+                // Update file content if we have an active file
+                if (activeFile && updateFileContent) {
+                    updateFileContent(activeFile, value);
+                    toast.success('Auto-saved', { 
+                        autoClose: 1000,
+                        hideProgressBar: true 
+                    });
                 }
-
-                // Keep track of last editor for the whole file
-                const blameData = { ...(currentData.codeBlame || {}) };
-                blameData.lastEditor = {
-                    userId: auth.currentUser.uid,
-                    userName: auth.currentUser.displayName || "Anonymous",
-                    userPhoto: auth.currentUser.photoURL ||
-                        "https://api.dicebear.com/7.x/avatars/svg?seed=" + auth.currentUser.uid,
-                    timestamp: now
-                };
-
-                // Then update data preserving other fields
-                set(roomRef, {
-                    ...currentData,
-                    code: value,
-                    language,
-                    lastUpdated: now,
-                    codeBlame: blameData,
-                    lineBlame: lineBlame // Save line-by-line blame data
-                });
-            }, { onlyOnce: true });
+                
+                // Also update Firebase for backwards compatibility
+                if (roomId) {
+                    saveToFirebase(value);
+                }
+            }, 2000); // Auto-save after 2 seconds of inactivity
+        } else {
+            // Immediate save if auto-save is disabled
+            if (activeFile && updateFileContent) {
+                updateFileContent(activeFile, value);
+            }
+            
+            // Also update Firebase for backwards compatibility
+            if (roomId) {
+                saveToFirebase(value);
+            }
         }
-    };// Execute code function
+    };
+    
+    // Separate function to save to Firebase
+    const saveToFirebase = (value) => {
+        if (!roomId) return;
+        
+        const roomRef = ref(database, `rooms/${roomId}`);
+
+        // First read the current room data
+        onValue(roomRef, (snapshot) => {
+            const currentData = snapshot.val() || {};
+            const now = Date.now();
+
+            // Get old code lines and new code lines
+            const oldCode = currentData.code || "";
+            const oldLines = oldCode.split('\n');
+            const newLines = value.split('\n');
+
+            // Create or update the lineBlame object
+            const lineBlame = { ...(currentData.lineBlame || {}) };
+
+            // Track changed lines by comparing old and new code
+            for (let i = 0; i < newLines.length; i++) {
+                // If line is new or changed, update blame data
+                if (i >= oldLines.length || newLines[i] !== oldLines[i]) {
+                    lineBlame[i] = {
+                        userId: auth.currentUser.uid,
+                        userName: auth.currentUser.displayName || "Anonymous",
+                        userPhoto: auth.currentUser.photoURL ||
+                            "https://api.dicebear.com/7.x/avatars/svg?seed=" + auth.currentUser.uid,
+                        timestamp: now
+                    };
+                }
+            }
+
+            // Keep track of last editor for the whole file
+            const blameData = { ...(currentData.codeBlame || {}) };
+            blameData.lastEditor = {
+                userId: auth.currentUser.uid,
+                userName: auth.currentUser.displayName || "Anonymous",
+                userPhoto: auth.currentUser.photoURL ||
+                    "https://api.dicebear.com/7.x/avatars/svg?seed=" + auth.currentUser.uid,
+                timestamp: now
+            };
+
+            // Then update data preserving other fields
+            set(roomRef, {
+                ...currentData,
+                code: value,
+                language,
+                lastUpdated: now,
+                codeBlame: blameData,
+                lineBlame: lineBlame // Save line-by-line blame data
+            });
+        }, { onlyOnce: true });
+    };
+    
+    // Clean up auto-save timer on unmount
+    useEffect(() => {
+        return () => {
+            if (autoSaveTimerRef.current) {
+                clearTimeout(autoSaveTimerRef.current);
+            }
+        };
+    }, []);// Execute code function
     const executeCode = async () => {
         setIsExecuting(true);
         setOutput("");

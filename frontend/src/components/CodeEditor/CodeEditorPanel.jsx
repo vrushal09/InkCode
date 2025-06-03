@@ -5,6 +5,8 @@ import { javascript } from "@codemirror/lang-javascript";
 import { createBlameTooltipExtension } from "../../extensions/blameTooltipExtension";
 import { createLineBlameTooltipExtension } from "../../extensions/lineBlameTooltipExtension";
 import { createCommentGutterExtension } from "../../extensions/commentGutterExtension";
+import { createEnhancedExtensions } from "../../extensions/editorExtensions";
+import { useUserPreferences } from "../../contexts/UserPreferencesContext";
 
 const CodeEditorPanel = ({
     code,
@@ -18,7 +20,8 @@ const CodeEditorPanel = ({
     setEditorElement,
     activeFile
 }) => {
-    const editorContainerRef = useRef(null);    // Set up editor element reference for cursor tracking
+    const { preferences } = useUserPreferences();
+    const editorContainerRef = useRef(null);// Set up editor element reference for cursor tracking
     useEffect(() => {
         if (editorContainerRef.current && setEditorElement) {
             const editorElement = editorContainerRef.current.querySelector('.cm-editor');
@@ -61,7 +64,20 @@ const CodeEditorPanel = ({
                 <CodeMirror
                     value={code}
                     height="100%"
-                    theme="dark"
+                    theme={preferences.theme === 'dark' ? 'dark' : 'light'}
+                    basicSetup={{
+                        lineNumbers: preferences.lineNumbers,
+                        foldGutter: true,
+                        dropCursor: false,
+                        allowMultipleSelections: true,
+                        indentOnInput: true,
+                        bracketMatching: preferences.bracketMatching,
+                        closeBrackets: true,
+                        autocompletion: preferences.autoCompletion,
+                        highlightActiveLine: preferences.highlightActiveLine,
+                        searchKeymap: true,
+                        history: true
+                    }}
                     extensions={[
                         (() => {
                             try {
@@ -76,6 +92,7 @@ const CodeEditorPanel = ({
                                 return javascript();
                             }
                         })(),
+                        ...createEnhancedExtensions(language, preferences),
                         blameTooltipExtension,
                         lineBlameTooltipExtension,
                         commentGutter

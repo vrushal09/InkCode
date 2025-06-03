@@ -3,9 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { auth } from '../config/firebase';
 import { updateProfile, updateEmail, updatePassword, signOut, deleteUser } from 'firebase/auth';
 import { toast } from 'react-toastify';
+import { useUserPreferences } from '../contexts/UserPreferencesContext';
 
 const Profile = () => {
   const navigate = useNavigate();
+  const { preferences, updatePreference, resetPreferences } = useUserPreferences();
+  
   const [formData, setFormData] = useState({
     displayName: auth.currentUser?.displayName || '',
     email: auth.currentUser?.email || '',
@@ -367,7 +370,234 @@ const Profile = () => {
                 >
                   Update Password
                 </button>
-              </form>
+              </form>            </div>
+
+            {/* User Preferences */}
+            <div className="bg-[#111119] border border-gray-800 rounded-lg p-6">
+              <h2 className="text-xl font-semibold mb-6 flex items-center">
+                <svg className="h-5 w-5 mr-2 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                </svg>
+                Editor Preferences
+              </h2>
+              
+              <div className="space-y-6">
+                {/* Editor Settings */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Theme
+                    </label>
+                    <select
+                      value={preferences.theme}
+                      onChange={(e) => updatePreference('theme', e.target.value)}
+                      className="block w-full px-3 py-2.5 bg-[#1a1a23] text-white border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent"
+                    >
+                      <option value="dark">Dark</option>
+                      <option value="light">Light</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Font Size
+                    </label>
+                    <select
+                      value={preferences.fontSize}
+                      onChange={(e) => updatePreference('fontSize', parseInt(e.target.value))}
+                      className="block w-full px-3 py-2.5 bg-[#1a1a23] text-white border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent"
+                    >
+                      <option value="10">10px</option>
+                      <option value="12">12px</option>
+                      <option value="14">14px (Default)</option>
+                      <option value="16">16px</option>
+                      <option value="18">18px</option>
+                      <option value="20">20px</option>
+                      <option value="22">22px</option>
+                      <option value="24">24px</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Font Family
+                    </label>
+                    <select
+                      value={preferences.fontFamily}
+                      onChange={(e) => updatePreference('fontFamily', e.target.value)}
+                      className="block w-full px-3 py-2.5 bg-[#1a1a23] text-white border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent"
+                    >
+                      <option value="'Fira Code', 'Consolas', 'Monaco', monospace">Fira Code (Default)</option>
+                      <option value="'Source Code Pro', monospace">Source Code Pro</option>
+                      <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+                      <option value="'SF Mono', 'Monaco', 'Consolas', monospace">SF Mono</option>
+                      <option value="'Cascadia Code', monospace">Cascadia Code</option>
+                      <option value="'Ubuntu Mono', monospace">Ubuntu Mono</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Tab Size
+                    </label>
+                    <select
+                      value={preferences.tabSize}
+                      onChange={(e) => updatePreference('tabSize', parseInt(e.target.value))}
+                      className="block w-full px-3 py-2.5 bg-[#1a1a23] text-white border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent"
+                    >
+                      <option value="2">2 spaces</option>
+                      <option value="4">4 spaces (Default)</option>
+                      <option value="6">6 spaces</option>
+                      <option value="8">8 spaces</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Toggle Settings */}
+                <div className="border-t border-gray-700 pt-4">
+                  <h3 className="text-lg font-medium text-gray-300 mb-4">Display Options</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label className="flex items-center justify-between p-3 bg-[#1a1a23] border border-gray-700 rounded-lg hover:bg-[#2a2a35] transition-colors cursor-pointer">
+                      <div>
+                        <span className="text-sm font-medium text-white">Word Wrap</span>
+                        <p className="text-xs text-gray-400">Wrap long lines to fit screen</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={preferences.wordWrap}
+                        onChange={(e) => updatePreference('wordWrap', e.target.checked)}
+                        className="w-4 h-4 text-violet-600 bg-gray-800 border-gray-600 rounded focus:ring-violet-500 focus:ring-2"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between p-3 bg-[#1a1a23] border border-gray-700 rounded-lg hover:bg-[#2a2a35] transition-colors cursor-pointer">
+                      <div>
+                        <span className="text-sm font-medium text-white">Line Numbers</span>
+                        <p className="text-xs text-gray-400">Show line numbers in editor</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={preferences.lineNumbers}
+                        onChange={(e) => updatePreference('lineNumbers', e.target.checked)}
+                        className="w-4 h-4 text-violet-600 bg-gray-800 border-gray-600 rounded focus:ring-violet-500 focus:ring-2"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between p-3 bg-[#1a1a23] border border-gray-700 rounded-lg hover:bg-[#2a2a35] transition-colors cursor-pointer">
+                      <div>
+                        <span className="text-sm font-medium text-white">Minimap</span>
+                        <p className="text-xs text-gray-400">Show code overview panel</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={preferences.minimap}
+                        onChange={(e) => updatePreference('minimap', e.target.checked)}
+                        className="w-4 h-4 text-violet-600 bg-gray-800 border-gray-600 rounded focus:ring-violet-500 focus:ring-2"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between p-3 bg-[#1a1a23] border border-gray-700 rounded-lg hover:bg-[#2a2a35] transition-colors cursor-pointer">
+                      <div>
+                        <span className="text-sm font-medium text-white">Auto Completion</span>
+                        <p className="text-xs text-gray-400">Enable smart suggestions</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={preferences.autoCompletion}
+                        onChange={(e) => updatePreference('autoCompletion', e.target.checked)}
+                        className="w-4 h-4 text-violet-600 bg-gray-800 border-gray-600 rounded focus:ring-violet-500 focus:ring-2"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between p-3 bg-[#1a1a23] border border-gray-700 rounded-lg hover:bg-[#2a2a35] transition-colors cursor-pointer">
+                      <div>
+                        <span className="text-sm font-medium text-white">Bracket Matching</span>
+                        <p className="text-xs text-gray-400">Highlight matching brackets</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={preferences.bracketMatching}
+                        onChange={(e) => updatePreference('bracketMatching', e.target.checked)}
+                        className="w-4 h-4 text-violet-600 bg-gray-800 border-gray-600 rounded focus:ring-violet-500 focus:ring-2"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between p-3 bg-[#1a1a23] border border-gray-700 rounded-lg hover:bg-[#2a2a35] transition-colors cursor-pointer">
+                      <div>
+                        <span className="text-sm font-medium text-white">Highlight Active Line</span>
+                        <p className="text-xs text-gray-400">Highlight current line</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={preferences.highlightActiveLine}
+                        onChange={(e) => updatePreference('highlightActiveLine', e.target.checked)}
+                        className="w-4 h-4 text-violet-600 bg-gray-800 border-gray-600 rounded focus:ring-violet-500 focus:ring-2"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* UI Preferences */}
+                <div className="border-t border-gray-700 pt-4">
+                  <h3 className="text-lg font-medium text-gray-300 mb-4">UI Preferences</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label className="flex items-center justify-between p-3 bg-[#1a1a23] border border-gray-700 rounded-lg hover:bg-[#2a2a35] transition-colors cursor-pointer">
+                      <div>
+                        <span className="text-sm font-medium text-white">Auto Save</span>
+                        <p className="text-xs text-gray-400">Automatically save changes</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={preferences.autoSave}
+                        onChange={(e) => updatePreference('autoSave', e.target.checked)}
+                        className="w-4 h-4 text-violet-600 bg-gray-800 border-gray-600 rounded focus:ring-violet-500 focus:ring-2"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between p-3 bg-[#1a1a23] border border-gray-700 rounded-lg hover:bg-[#2a2a35] transition-colors cursor-pointer">
+                      <div>
+                        <span className="text-sm font-medium text-white">Chat Notifications</span>
+                        <p className="text-xs text-gray-400">Show chat message alerts</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={preferences.chatNotifications}
+                        onChange={(e) => updatePreference('chatNotifications', e.target.checked)}
+                        className="w-4 h-4 text-violet-600 bg-gray-800 border-gray-600 rounded focus:ring-violet-500 focus:ring-2"
+                      />
+                    </label>
+
+                    <label className="flex items-center justify-between p-3 bg-[#1a1a23] border border-gray-700 rounded-lg hover:bg-[#2a2a35] transition-colors cursor-pointer">
+                      <div>
+                        <span className="text-sm font-medium text-white">Indent with Tabs</span>
+                        <p className="text-xs text-gray-400">Use tabs instead of spaces</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={preferences.indentWithTabs}
+                        onChange={(e) => updatePreference('indentWithTabs', e.target.checked)}
+                        className="w-4 h-4 text-violet-600 bg-gray-800 border-gray-600 rounded focus:ring-violet-500 focus:ring-2"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="border-t border-gray-700 pt-4 flex justify-between">
+                  <button
+                    onClick={resetPreferences}
+                    className="px-4 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium border border-gray-500"
+                  >
+                    Reset to Defaults
+                  </button>
+                  <div className="text-sm text-gray-400 flex items-center">
+                    <svg className="h-4 w-4 mr-1 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Settings saved automatically
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Danger Zone */}

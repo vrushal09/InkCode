@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useUserPreferences } from '../../contexts/UserPreferencesContext';
 
 const TerminalPanel = ({ 
     output, 
@@ -9,6 +10,7 @@ const TerminalPanel = ({
     language,
     activeFile 
 }) => {
+    const { preferences } = useUserPreferences();
     const [terminalHistory, setTerminalHistory] = useState([]);
     const [currentCommand, setCurrentCommand] = useState('');
     const [commandHistory, setCommandHistory] = useState([]);
@@ -154,21 +156,23 @@ lang - Show current language`;
         const fileName = activeFile ? activeFile.split('/').pop() : 'editor';
         return `${fileName}:${language}$`;
     };    const renderContent = (item) => {
+        const isLightTheme = preferences.terminalTheme === 'light';
+        
         if (item.type === 'command') {
             return (
                 <div className="flex items-start gap-1 mb-1">
-                    <span className="text-green-400 font-mono text-xs">{getPrompt()}</span>
-                    <span className="text-white font-mono text-xs">{item.content}</span>
-                    <span className="text-gray-500 text-xs ml-auto">{item.timestamp}</span>
+                    <span className={`${isLightTheme ? 'text-green-600' : 'text-green-400'} font-mono text-xs`}>{getPrompt()}</span>
+                    <span className={`${isLightTheme ? 'text-black' : 'text-white'} font-mono text-xs`}>{item.content}</span>
+                    <span className={`${isLightTheme ? 'text-gray-600' : 'text-gray-500'} text-xs ml-auto`}>{item.timestamp}</span>
                 </div>
             );
         } else {
             return (
                 <div className="mb-1">
-                    <pre className="text-gray-300 font-mono text-xs whitespace-pre-wrap break-words">
+                    <pre className={`${isLightTheme ? 'text-gray-800' : 'text-gray-300'} font-mono text-xs whitespace-pre-wrap break-words`}>
                         {item.content}
                     </pre>
-                    <span className="text-gray-500 text-xs">{item.timestamp}</span>
+                    <span className={`${isLightTheme ? 'text-gray-600' : 'text-gray-500'} text-xs`}>{item.timestamp}</span>
                 </div>
             );
         }
@@ -227,16 +231,14 @@ lang - Show current language`;
                         </button>
                     </div>
                 </div>
-            </div>
-
-            {/* Terminal Content - Responsive sizing */}
+            </div>            {/* Terminal Content - Responsive sizing */}
             <div 
                 ref={terminalRef}
-                className="flex-1 p-2 bg-black overflow-y-auto font-mono text-xs"
-            >
-                {/* Welcome message */}
+                className={`flex-1 p-2 ${preferences.terminalTheme === 'light' ? 'bg-gray-100 text-black' : 'bg-black text-white'} overflow-y-auto font-mono`}
+                style={{ fontSize: `${preferences.terminalFontSize}px` }}
+            >                {/* Welcome message */}
                 {terminalHistory.length === 0 && (
-                    <div className="text-gray-400 mb-2">
+                    <div className={`${preferences.terminalTheme === 'light' ? 'text-gray-600' : 'text-gray-400'} mb-2`}>
                         <p className="text-xs">InkCode Terminal - Ready to execute your code!</p>
                         <p className="text-xs mt-1">Type 'help' for available commands or 'run' to execute code.</p>
                     </div>
@@ -247,18 +249,16 @@ lang - Show current language`;
                     <div key={index}>
                         {renderContent(item)}
                     </div>
-                ))}
-
-                {/* Current input line */}
+                ))}                {/* Current input line */}
                 <form onSubmit={handleCommandSubmit} className="flex items-center gap-1 mt-1">
-                    <span className="text-green-400 font-mono text-xs">{getPrompt()}</span>
+                    <span className={`${preferences.terminalTheme === 'light' ? 'text-green-600' : 'text-green-400'} font-mono text-xs`}>{getPrompt()}</span>
                     <input
                         ref={inputRef}
                         type="text"
                         value={currentCommand}
                         onChange={(e) => setCurrentCommand(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        className="flex-1 bg-transparent text-white font-mono text-xs outline-none border-none"
+                        className={`flex-1 bg-transparent ${preferences.terminalTheme === 'light' ? 'text-black' : 'text-white'} font-mono text-xs outline-none border-none`}
                         placeholder="Enter command..."
                         autoFocus
                     />
