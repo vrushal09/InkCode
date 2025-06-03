@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { auth } from '../config/firebase';
+import { DEFAULT_THEME } from '../config/themes';
 
 const UserPreferencesContext = createContext();
 
@@ -13,7 +14,7 @@ export const useUserPreferences = () => {
 
 const DEFAULT_PREFERENCES = {
     // Editor preferences
-    theme: 'dark',
+    theme: DEFAULT_THEME, // Now uses CodeMirror theme ID instead of 'dark'/'light'
     fontSize: 14,
     fontFamily: "'Fira Code', 'Consolas', 'Monaco', monospace",
     tabSize: 4,

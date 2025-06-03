@@ -3,6 +3,7 @@ import { ToastContainer } from 'react-toastify';
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './config/firebase';
+import { getThemeInfo } from './config/themes';
 
 // Pages
 import Auth from './pages/Auth';
@@ -21,6 +22,10 @@ function AppContent() {
   const { preferences } = useUserPreferences();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // Get theme info to determine if it's light or dark
+  const themeInfo = getThemeInfo(preferences.theme);
+  const isLightTheme = themeInfo.category === 'Light';
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -34,7 +39,7 @@ function AppContent() {
   if (loading) {
     return (
       <div className={`flex items-center justify-center min-h-screen ${
-        preferences.theme === 'light' ? 'bg-gray-100' : 'bg-primary'
+        isLightTheme ? 'bg-gray-100' : 'bg-primary'
       }`}>
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
       </div>
@@ -43,7 +48,7 @@ function AppContent() {
 
   return (
     <div className={`min-h-screen ${
-      preferences.theme === 'light' 
+      isLightTheme 
         ? 'bg-gray-100 text-gray-900' 
         : 'bg-primary text-white'
     }`}>
@@ -75,7 +80,7 @@ function AppContent() {
       </Routes>
       <ToastContainer 
         position="bottom-right"
-        theme={preferences.theme === 'light' ? 'light' : 'dark'}
+        theme={isLightTheme ? 'light' : 'dark'}
         autoClose={3000}
       />
     </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { auth, database } from "../config/firebase";
 import { ref, onValue, set } from "firebase/database";
 import { toast } from "react-toastify";
@@ -10,9 +10,7 @@ export const useCodeEditor = (roomId, activeFile, getFileContent, updateFileCont
     const [code, setCode] = useState("");
     const [language, setLanguage] = useState("javascript");
     const [input, setInput] = useState("");
-    const [output, setOutput] = useState("");
-    const [isExecuting, setIsExecuting] = useState(false);
-    const autoSaveTimerRef = useRef(null);// Load code from active file
+    const [output, setOutput] = useState("");    const [isExecuting, setIsExecuting] = useState(false);// Load code from active file
     useEffect(() => {
         if (activeFile && getFileContent && getFileObject) {
             const content = getFileContent(activeFile);
@@ -67,42 +65,21 @@ export const useCodeEditor = (roomId, activeFile, getFileContent, updateFileCont
         });
 
         return () => unsubscribe();
-    }, [roomId, activeFile]);    // Handle code changes with blame tracking and auto-save
+    }, [roomId, activeFile]);    // Handle code changes with immediate save (old way)
     const handleCodeChange = (value) => {
+        // Only proceed if this is actually a code change (not from terminal or other inputs)
+        if (value === code) return; // No change detected
+        
         setCode(value);
         
-        // Clear existing auto-save timer
-        if (autoSaveTimerRef.current) {
-            clearTimeout(autoSaveTimerRef.current);
+        // Immediate save without delays or notifications
+        if (activeFile && updateFileContent) {
+            updateFileContent(activeFile, value);
         }
         
-        // Auto-save functionality based on preferences
-        if (preferences.autoSave) {
-            autoSaveTimerRef.current = setTimeout(() => {
-                // Update file content if we have an active file
-                if (activeFile && updateFileContent) {
-                    updateFileContent(activeFile, value);
-                    toast.success('Auto-saved', { 
-                        autoClose: 1000,
-                        hideProgressBar: true 
-                    });
-                }
-                
-                // Also update Firebase for backwards compatibility
-                if (roomId) {
-                    saveToFirebase(value);
-                }
-            }, 2000); // Auto-save after 2 seconds of inactivity
-        } else {
-            // Immediate save if auto-save is disabled
-            if (activeFile && updateFileContent) {
-                updateFileContent(activeFile, value);
-            }
-            
-            // Also update Firebase for backwards compatibility
-            if (roomId) {
-                saveToFirebase(value);
-            }
+        // Also update Firebase for backwards compatibility
+        if (roomId) {
+            saveToFirebase(value);
         }
     };
     
@@ -158,17 +135,9 @@ export const useCodeEditor = (roomId, activeFile, getFileContent, updateFileCont
                 codeBlame: blameData,
                 lineBlame: lineBlame // Save line-by-line blame data
             });
-        }, { onlyOnce: true });
-    };
+        }, { onlyOnce: true });    };
     
-    // Clean up auto-save timer on unmount
-    useEffect(() => {
-        return () => {
-            if (autoSaveTimerRef.current) {
-                clearTimeout(autoSaveTimerRef.current);
-            }
-        };
-    }, []);// Execute code function
+    // Execute code function
     const executeCode = async () => {
         setIsExecuting(true);
         setOutput("");

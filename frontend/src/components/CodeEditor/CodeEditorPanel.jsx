@@ -7,6 +7,7 @@ import { createLineBlameTooltipExtension } from "../../extensions/lineBlameToolt
 import { createCommentGutterExtension } from "../../extensions/commentGutterExtension";
 import { createEnhancedExtensions } from "../../extensions/editorExtensions";
 import { useUserPreferences } from "../../contexts/UserPreferencesContext";
+import { getThemeById } from '../../config/themes';
 
 const CodeEditorPanel = ({
     code,
@@ -64,7 +65,7 @@ const CodeEditorPanel = ({
                 <CodeMirror
                     value={code}
                     height="100%"
-                    theme={preferences.theme === 'dark' ? 'dark' : 'light'}
+                    theme={getThemeById(preferences.theme)}
                     basicSetup={{
                         lineNumbers: preferences.lineNumbers,
                         foldGutter: true,

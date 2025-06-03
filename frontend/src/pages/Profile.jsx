@@ -4,6 +4,7 @@ import { auth } from '../config/firebase';
 import { updateProfile, updateEmail, updatePassword, signOut, deleteUser } from 'firebase/auth';
 import { toast } from 'react-toastify';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
+import { AVAILABLE_THEMES, getThemesByCategory, getThemeInfo } from '../config/themes';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -17,7 +18,6 @@ const Profile = () => {
     confirmPassword: ''
   });
 
-  const [isDarkTheme, setIsDarkTheme] = useState(true);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -393,8 +393,15 @@ const Profile = () => {
                       onChange={(e) => updatePreference('theme', e.target.value)}
                       className="block w-full px-3 py-2.5 bg-[#1a1a23] text-white border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent"
                     >
-                      <option value="dark">Dark</option>
-                      <option value="light">Light</option>
+                      {Object.entries(getThemesByCategory()).map(([category, themes]) => (
+                        <optgroup key={category} label={category}>
+                          {themes.map(theme => (
+                            <option key={theme.id} value={theme.id}>
+                              {theme.name}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))}
                     </select>
                   </div>
 

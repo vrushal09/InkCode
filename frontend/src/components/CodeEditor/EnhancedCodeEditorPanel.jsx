@@ -12,6 +12,7 @@ import {
 import { formatCode } from "../../utils/codeFormatter";
 import { openSearchPanel } from "@codemirror/search";
 import { useUserPreferences } from "../../contexts/UserPreferencesContext";
+import { getThemeById } from '../../config/themes';
 
 const EnhancedCodeEditorPanel = ({
     code,
@@ -189,7 +190,7 @@ const EnhancedCodeEditorPanel = ({
                 <div className={`${showMinimap ? 'pr-32' : ''} h-full`}>                    <CodeMirror
                         value={code}
                         height="100%"
-                        theme={preferences.theme === 'dark' ? 'dark' : 'light'}
+                        theme={getThemeById(preferences.theme)}
                         basicSetup={{
                             lineNumbers: preferences.lineNumbers,
                             foldGutter: true,
