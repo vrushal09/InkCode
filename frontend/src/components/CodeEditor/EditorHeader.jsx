@@ -1,4 +1,3 @@
-import EditorFeaturesPanel from './EditorFeaturesPanel';
 import { useUserPreferences } from '../../contexts/UserPreferencesContext';
 
 const EditorHeader = ({
@@ -64,18 +63,14 @@ const EditorHeader = ({
                             </div>
                         )}
                     </div>                    {/* Controls */}
-                    <div className="flex items-center space-x-3">
-                        {/* Auto-save indicator */}
+                    <div className="flex items-center space-x-3">                        {/* Auto-save indicator */}
                         {preferences.autoSave && (
-                            <div className="flex items-center gap-2 px-3 py-1 bg-green-900/30 border border-green-700/50 rounded-lg">
+                            <div className="flex items-center gap-2 p-[10px] bg-green-900/30 border border-green-700/50 rounded-lg">
                                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                                 <span className="text-xs text-green-300 font-medium">Auto-save: ON</span>
                             </div>
                         )}
                         
-                        {/* Editor Features Panel */}
-                        <EditorFeaturesPanel />
-
                         {/* Chat Toggle Button */}
                         <button
                             onClick={toggleChat}
