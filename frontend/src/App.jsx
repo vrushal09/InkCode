@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard';
 import CodeEditor from './pages/CodeEditor';
 import Profile from './pages/Profile';
 import JoinTeam from './pages/JoinTeam';
+import Instructions from './pages/Instructions';
 
 // Contexts
 import { UserPreferencesProvider, useUserPreferences } from './contexts/UserPreferencesContext';
@@ -72,10 +73,13 @@ function AppContent() {
         <Route 
           path="/profile" 
           element={user ? <Profile /> : <Navigate to="/" />} 
-        />
-        <Route 
+        />        <Route 
           path="/join-team" 
           element={<JoinTeam />} 
+        />
+        <Route 
+          path="/instructions" 
+          element={user ? <Instructions /> : <Navigate to="/" />} 
         />
       </Routes>
       <ToastContainer 

@@ -13,7 +13,7 @@ const Dashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
-  const [projects, setProjects] = useState([]);  const [filteredProjects, setFilteredProjects] = useState([]);  const [newProject, setNewProject] = useState({
+  const [projects, setProjects] = useState([]); const [filteredProjects, setFilteredProjects] = useState([]); const [newProject, setNewProject] = useState({
     name: ''
   });
   const [searchQuery, setSearchQuery] = useState('');
@@ -36,7 +36,7 @@ const Dashboard = () => {
           }));
 
           // Filter projects where user is creator or team member
-          const userProjects = allProjects.filter(project => 
+          const userProjects = allProjects.filter(project =>
             project.createdBy === auth.currentUser.uid || userProjectIds.includes(project.id)
           );
 
@@ -79,7 +79,7 @@ const Dashboard = () => {
     try {
       const projectId = uuidv4();
       const roomId = uuidv4();
-        // Create project in projects collection
+      // Create project in projects collection
       const projectRef = ref(database, `projects/${projectId}`);
       await set(projectRef, {
         name: newProject.name,
@@ -114,14 +114,15 @@ const Dashboard = () => {
         projectId,
         joinedAt: Date.now(),
         role: 'owner'
-      });      setIsModalOpen(false);
+      }); setIsModalOpen(false);
       setNewProject({ name: '' });
       navigate(`/editor/${roomId}`);
       toast.success('Project created successfully!');
     } catch (error) {
       console.error('Error creating project:', error);
       toast.error('Failed to create project');
-    }  };
+    }
+  };
 
   const joinRoom = (roomId) => {
     navigate(`/editor/${roomId}`);
@@ -135,7 +136,7 @@ const Dashboard = () => {
 
   const handleDeleteProject = async (e, projectId, roomId) => {
     e.stopPropagation();
-    
+
     if (!window.confirm('Are you sure you want to delete this project? This will remove it for all team members.')) {
       return;
     }
@@ -143,7 +144,7 @@ const Dashboard = () => {
     try {
       // Get project data before deletion to access invitations
       const project = projects.find(p => p.id === projectId);
-      
+
       // Remove project from projects collection (this also removes project invitations)
       const projectRef = ref(database, `projects/${projectId}`);
       await remove(projectRef);
@@ -169,7 +170,7 @@ const Dashboard = () => {
             return remove(globalInviteRef);
           }
         }).filter(Boolean); // Remove undefined entries
-        
+
         if (globalInviteCleanup.length > 0) {
           await Promise.all(globalInviteCleanup);
         }
@@ -248,18 +249,17 @@ const Dashboard = () => {
                       }}
                     />
                   ) : null}
-                  <div 
-                    className={`w-full h-full bg-gradient-to-r from-violet-600 to-purple-600 flex items-center justify-center ${
-                      auth.currentUser?.photoURL ? 'hidden' : 'flex'
-                    }`}
+                  <div
+                    className={`w-full h-full bg-gradient-to-r from-violet-600 to-purple-600 flex items-center justify-center ${auth.currentUser?.photoURL ? 'hidden' : 'flex'
+                      }`}
                   >
                     <span className="text-white font-bold text-sm">
-                      {auth.currentUser?.displayName?.charAt(0)?.toUpperCase() || 
-                       auth.currentUser?.email?.charAt(0)?.toUpperCase() || 'U'}
+                      {auth.currentUser?.displayName?.charAt(0)?.toUpperCase() ||
+                        auth.currentUser?.email?.charAt(0)?.toUpperCase() || 'U'}
                     </span>
                   </div>
                 </div>
-                
+
                 {/* Online status indicator */}
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-[#111119] rounded-full"></div>
               </button>              <button
@@ -267,6 +267,17 @@ const Dashboard = () => {
                 className="px-4 py-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg hover:from-violet-700 hover:to-purple-700 transition-colors text-sm font-medium"
               >
                 New Project
+              </button>
+
+              <button
+                onClick={() => navigate('/instructions')}
+                className="px-4 py-2 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-colors text-sm font-medium flex items-center space-x-2"
+                title="Learn how to use InkCode"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Info</span>
               </button>
             </div>
           </div>
@@ -364,103 +375,103 @@ const Dashboard = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">            {filteredProjects.map((project) => (
-              <div
-                key={project.id}
-                className="group bg-[#111119] border border-gray-800 rounded-lg p-6 hover:border-violet-600/50 transition-all duration-200 hover:shadow-lg hover:shadow-violet-600/10"
-              >
-                <div className="flex flex-col h-full">
-                  <div className="flex items-start justify-between mb-4">                    <div 
-                      className="flex items-center space-x-3 flex-1 min-w-0 cursor-pointer"
-                      onClick={() => joinRoom(project.roomId)}
+            <div
+              key={project.id}
+              className="group bg-[#111119] border border-gray-800 rounded-lg p-6 hover:border-violet-600/50 transition-all duration-200 hover:shadow-lg hover:shadow-violet-600/10"
+            >
+              <div className="flex flex-col h-full">
+                <div className="flex items-start justify-between mb-4">                    <div
+                  className="flex items-center space-x-3 flex-1 min-w-0 cursor-pointer"
+                  onClick={() => joinRoom(project.roomId)}
+                >
+                  <div className="text-2xl">📁</div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg font-semibold truncate group-hover:text-violet-400 transition-colors">
+                      {project.name}
+                    </h3>
+                    <p className="text-sm text-gray-400">
+                      {project.createdAt ? formatDate(project.createdAt) : 'No date'}
+                    </p>
+                    {project.teamMembers && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        {Object.keys(project.teamMembers).length} team member{Object.keys(project.teamMembers).length !== 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => openTeamManager(e, project.id)}
+                      className="p-2 text-gray-400 hover:text-violet-400 hover:bg-violet-500/10 rounded-lg transition-colors"
+                      title="Manage Team"
                     >
-                      <div className="text-2xl">📁</div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-lg font-semibold truncate group-hover:text-violet-400 transition-colors">
-                          {project.name}
-                        </h3>
-                        <p className="text-sm text-gray-400">
-                          {project.createdAt ? formatDate(project.createdAt) : 'No date'}
-                        </p>
-                        {project.teamMembers && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            {Object.keys(project.teamMembers).length} team member{Object.keys(project.teamMembers).length !== 1 ? 's' : ''}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </button>
+                    {project.createdBy === auth.currentUser.uid && (
                       <button
-                        onClick={(e) => openTeamManager(e, project.id)}
-                        className="p-2 text-gray-400 hover:text-violet-400 hover:bg-violet-500/10 rounded-lg transition-colors"
-                        title="Manage Team"
+                        onClick={(e) => handleDeleteProject(e, project.id, project.roomId)}
+                        className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                        title="Delete Project"
                       >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </button>
-                      {project.createdBy === auth.currentUser.uid && (
-                        <button
-                          onClick={(e) => handleDeleteProject(e, project.id, project.roomId)}
-                          className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                          title="Delete Project"
-                        >
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Team Member Avatars */}
+                {project.teamMembers && Object.keys(project.teamMembers).length > 0 && (
+                  <div className="flex items-center gap-1 mb-4">
+                    <div className="flex -space-x-2">
+                      {Object.values(project.teamMembers).slice(0, 4).map((member) => (
+                        <img
+                          key={member.userId}
+                          src={member.photoURL}
+                          alt={member.name}
+                          className="w-6 h-6 rounded-full border-2 border-[#111119]"
+                          title={member.name}
+                        />
+                      ))}
+                      {Object.keys(project.teamMembers).length > 4 && (
+                        <div className="w-6 h-6 rounded-full bg-gray-700 border-2 border-[#111119] flex items-center justify-center">
+                          <span className="text-xs text-gray-300">+{Object.keys(project.teamMembers).length - 4}</span>
+                        </div>
                       )}
                     </div>
+                    <span className="text-xs text-gray-400 ml-2">
+                      {project.createdBy === auth.currentUser.uid ? 'Owner' : 'Member'}
+                    </span>
                   </div>
+                )}
 
-                  {/* Team Member Avatars */}
-                  {project.teamMembers && Object.keys(project.teamMembers).length > 0 && (
-                    <div className="flex items-center gap-1 mb-4">
-                      <div className="flex -space-x-2">
-                        {Object.values(project.teamMembers).slice(0, 4).map((member) => (
-                          <img
-                            key={member.userId}
-                            src={member.photoURL}
-                            alt={member.name}
-                            className="w-6 h-6 rounded-full border-2 border-[#111119]"
-                            title={member.name}
-                          />
-                        ))}
-                        {Object.keys(project.teamMembers).length > 4 && (
-                          <div className="w-6 h-6 rounded-full bg-gray-700 border-2 border-[#111119] flex items-center justify-center">
-                            <span className="text-xs text-gray-300">+{Object.keys(project.teamMembers).length - 4}</span>
-                          </div>
-                        )}
-                      </div>
-                      <span className="text-xs text-gray-400 ml-2">
-                        {project.createdBy === auth.currentUser.uid ? 'Owner' : 'Member'}
-                      </span>
-                    </div>
-                  )}
+                <div className="flex-1" />
 
-                  <div className="flex-1" />
-
-                  <div className="flex items-center justify-between text-xs text-gray-400 pt-4 border-t border-gray-800">
-                    <span>{formatDate(project.createdAt || project.timestamp)}</span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigator.clipboard.writeText(project.roomId);
-                          toast.success('Room ID copied!');
-                        }}
-                        className="flex items-center space-x-1 text-gray-400 hover:text-violet-400 transition-colors"
-                        title="Copy Room ID"
-                      >
-                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                        <span>Share</span>
-                      </button>
-                    </div>
+                <div className="flex items-center justify-between text-xs text-gray-400 pt-4 border-t border-gray-800">
+                  <span>{formatDate(project.createdAt || project.timestamp)}</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(project.roomId);
+                        toast.success('Room ID copied!');
+                      }}
+                      className="flex items-center space-x-1 text-gray-400 hover:text-violet-400 transition-colors"
+                      title="Copy Room ID"
+                    >
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      <span>Share</span>
+                    </button>
                   </div>
                 </div>
               </div>
-            ))}
+            </div>
+          ))}
           </div>
         )}
 
@@ -503,7 +514,7 @@ const Dashboard = () => {
                 </div>
               </form>
             </div>
-          </div>        )}
+          </div>)}
 
         {/* Team Manager Modal */}
         <TeamManager
