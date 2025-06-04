@@ -187,8 +187,7 @@ export const useFileSystem = (roomId) => {
             toast.error("File already exists");
             return;
         }
-        
-        // Determine language from file extension
+          // Determine language from file extension
         const extension = fileName.split('.').pop();
         const languageMap = {
             'js': 'javascript',
@@ -207,11 +206,65 @@ export const useFileSystem = (roomId) => {
         
         const language = languageMap[extension] || 'javascript';
         
-        // Create new file
+        // Generate default content based on file type
+        let defaultContent = content;
+        if (!content) {
+            switch (language) {
+                case 'html':
+                    defaultContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Hello, World!</h1>
+    <p>Welcome to your HTML file!</p>
+</body>
+</html>`;
+                    break;
+                case 'css':
+                    defaultContent = `/* CSS Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f5f5f5;
+}
+
+h1 {
+    color: #333;
+    text-align: center;
+}
+
+p {
+    color: #666;
+    line-height: 1.6;
+}`;
+                    break;
+                case 'javascript':
+                    defaultContent = fileName.endsWith('.js') && !fileName.endsWith('.jsx') 
+                        ? `// JavaScript File
+console.log('Hello, World!');
+
+// Your code here
+function greet(name) {
+    return \`Hello, \${name}!\`;
+}
+
+console.log(greet('Developer'));`
+                        : content || `// Welcome to JavaScript!\nconsole.log("Hello, World!");`;
+                    break;
+                default:
+                    defaultContent = content || '';
+            }
+        }
+          // Create new file
         current[firebaseKey] = {
             type: 'file',
             name: fileName, // Store the original filename
-            content: content,
+            content: defaultContent,
             language: language,
             createdAt: Date.now(),
             createdBy: {

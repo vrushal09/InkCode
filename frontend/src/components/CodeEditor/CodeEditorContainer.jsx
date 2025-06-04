@@ -14,6 +14,7 @@ import ControlPanel from "./ControlPanel";
 import CommentsSystem from "./CommentsSystem";
 import FileExplorer from "../FileExplorer";
 import FileTabs from "../FileTabs";
+import LivePreviewPanel from "./LivePreviewPanel";
 
 // Import hooks and utils
 import { useCodeEditor } from "../../hooks/useCodeEditor";
@@ -22,6 +23,7 @@ import { useChat } from "../../hooks/useChat";
 import { useComments } from "../../hooks/useComments";
 import { useCursors } from "../../hooks/useCursors";
 import { useFileSystem } from "../../hooks/useFileSystem";
+import { useLivePreview } from "../../hooks/useLivePreview";
 import { codeExecutionService } from "../../services/codeExecutionService";
 import { GlobalStyles } from "./GlobalStyles";
 import CursorOverlay from "../CursorOverlay";
@@ -110,6 +112,19 @@ const CodeEditorContainer = () => {
         setEditorElement
     } = useCursors(roomId, activeFile);
 
+    // Live preview hook
+    const {
+        isPreviewOpen,
+        connectedFiles,
+        previewContent,
+        connectFile,
+        disconnectFile,
+        togglePreview,
+        canPreview,
+        isHTMLFile,
+        autoDetectConnectedFiles
+    } = useLivePreview(openFiles, getFileContent, getFileObject, activeFile);
+
     // Track editor element for cursor positioning
     const [editorElementRef, setEditorElementRef] = useState(null);
 
@@ -194,8 +209,7 @@ const CodeEditorContainer = () => {
                             {/* Main Editor Area - Takes Most Space */}
                             <div className="flex-1 min-h-0 grid grid-cols-5 gap-2">
                                 {/* Left Panel - Enhanced Editor (4/5 width) */}
-                                <div className="col-span-4 flex flex-col gap-2">
-                                    {/* Enhanced Code Editor with new features */}
+                                <div className="col-span-4 flex flex-col gap-2">                                    {/* Enhanced Code Editor with new features */}
                                     <EnhancedCodeEditorPanel
                                         code={code}
                                         language={language}
@@ -214,6 +228,10 @@ const CodeEditorContainer = () => {
                                         handleStartComment={handleStartComment}
                                         setActiveComment={setActiveComment}
                                         setEditorElement={setEditorElementRef}
+                                        isHTMLFile={isHTMLFile}
+                                        canPreview={canPreview}
+                                        togglePreview={togglePreview}
+                                        isPreviewOpen={isPreviewOpen}
                                     />
                                 </div>                                {/* Right Panel - Controls (1/5 width) */}
                                 <div className="col-span-1 flex flex-col gap-2">
@@ -221,6 +239,13 @@ const CodeEditorContainer = () => {
                                     <ControlPanel
                                         executeCode={executeCode}
                                         isExecuting={isExecuting}
+                                        language={language}
+                                        activeFile={activeFile}
+                                        getFileObject={getFileObject}
+                                        isHTMLFile={isHTMLFile}
+                                        canPreview={canPreview}
+                                        togglePreview={togglePreview}
+                                        isPreviewOpen={isPreviewOpen}
                                     />
                                 </div>
                             </div>                            {/* Bottom Section - Terminal and Comments */}
@@ -261,10 +286,22 @@ const CodeEditorContainer = () => {
                         </div>
                     </div>
                 </div>
-            </div>{/* Collaborative Cursors Overlay */}
+            </div>            {/* Collaborative Cursors Overlay */}
             <CursorOverlay 
                 userCursors={userCursors}
                 editorElement={editorElementRef}
+            />
+
+            {/* Live Preview Panel */}
+            <LivePreviewPanel
+                isOpen={isPreviewOpen}
+                previewContent={previewContent}
+                connectedFiles={connectedFiles}
+                openFiles={openFiles}
+                getFileObject={getFileObject}
+                connectFile={connectFile}
+                disconnectFile={disconnectFile}
+                onClose={() => togglePreview()}
             />
         </div>
     );
