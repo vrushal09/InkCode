@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useUserPreferences } from '../../contexts/UserPreferencesContext';
+import { codeExecutionService } from '../../services/codeExecutionService';
 
 const TerminalPanel = ({ 
     output, 
@@ -38,9 +39,7 @@ const TerminalPanel = ({
                 }
             ]);
         }
-    }, [output, language]);
-
-    const handleCommandSubmit = (e) => {
+    }, [output, language]);    const handleCommandSubmit = async (e) => {
         e.preventDefault();
         
         if (!currentCommand.trim()) return;
@@ -79,8 +78,7 @@ const TerminalPanel = ({
                     timestamp: new Date().toLocaleTimeString(),
                     language: 'text'
                 }
-            ]);
-        } else if (command.toLowerCase() === 'help') {
+            ]);        } else if (command.toLowerCase() === 'help') {
             // Show help
             const helpText = `Available commands:
 run/execute - Run the current code file
@@ -88,12 +86,49 @@ clear - Clear terminal
 echo <message> - Display message
 help - Show this help
 pwd - Show current file
-lang - Show current language`;
+lang - Show current language
+status - Show execution environment status
+config - Show backend configuration status
+backend - Show backend server info`;
             setTerminalHistory(prev => [
                 ...prev,
                 {
                     type: 'output',
                     content: helpText,
+                    timestamp: new Date().toLocaleTimeString(),
+                    language: 'text'
+                }
+            ]);} else if (command.toLowerCase() === 'status') {
+            // Show execution status
+            const isBackendAvailable = await codeExecutionService.isBackendAvailable();
+            const supportedLangs = codeExecutionService.getSupportedLanguages();
+            const statusText = `Execution Environment Status:
+${isBackendAvailable ? '✅ Backend Server: Running' : '⚠️ Backend Server: Not available'}
+📋 Supported Languages: ${supportedLangs.join(', ')}
+🔧 Current Language: ${language}
+${!isBackendAvailable ? '\n⚠️ Start backend server: npm run dev (in backend directory)' : ''}`;
+            setTerminalHistory(prev => [
+                ...prev,
+                {
+                    type: 'output',
+                    content: statusText,
+                    timestamp: new Date().toLocaleTimeString(),
+                    language: 'text'
+                }
+            ]);
+        } else if (command.toLowerCase() === 'config') {
+            // Show config status
+            const isBackendAvailable = await codeExecutionService.isBackendAvailable();
+            const langConfig = codeExecutionService.getLanguageConfig(language);
+            const configText = `Configuration Status:
+Backend Server: ${isBackendAvailable ? 'Running ✅' : 'Not available ⚠️'}
+${langConfig ? `Language Config: ${langConfig.name} (${langConfig.jdoodleLanguage})` : 'Language not supported'}
+${!isBackendAvailable ? '\nTo start backend:\n1. cd backend\n2. npm install\n3. npm run dev' : ''}`;
+            setTerminalHistory(prev => [
+                ...prev,
+                {
+                    type: 'output',
+                    content: configText,
                     timestamp: new Date().toLocaleTimeString(),
                     language: 'text'
                 }
@@ -108,8 +143,7 @@ lang - Show current language`;
                     timestamp: new Date().toLocaleTimeString(),
                     language: 'text'
                 }
-            ]);
-        } else if (command.toLowerCase() === 'lang') {
+            ]);        } else if (command.toLowerCase() === 'lang') {
             // Show current language
             setTerminalHistory(prev => [
                 ...prev,
@@ -120,10 +154,37 @@ lang - Show current language`;
                     language: 'text'
                 }
             ]);
+        } else if (command.toLowerCase() === 'backend') {
+            // Show backend info
+            const backendText = `Backend Server Information:
+URL: http://localhost:5000
+Health Check: http://localhost:5000/api/health
+Execute Endpoint: http://localhost:5000/api/execute
+
+To start backend server:
+1. cd backend
+2. npm install
+3. npm run dev`;
+            setTerminalHistory(prev => [
+                ...prev,
+                {
+                    type: 'output',
+                    content: backendText,
+                    timestamp: new Date().toLocaleTimeString(),
+                    language: 'text'
+                }
+            ]);
         } else {
-            // For other commands, treat as input for code execution
-            setInput(command);
-            executeCode();
+            // Unknown command
+            setTerminalHistory(prev => [
+                ...prev,
+                {
+                    type: 'output',
+                    content: `Unknown command: ${command}. Type 'help' for available commands.`,
+                    timestamp: new Date().toLocaleTimeString(),
+                    language: 'text'
+                }
+            ]);
         }
 
         setCurrentCommand('');
@@ -263,9 +324,7 @@ lang - Show current language`;
                         autoFocus
                     />
                 </form>
-            </div>
-
-            {/* Terminal Footer - Compact */}
+            </div>            {/* Terminal Footer - Compact */}
             <div className="px-2 py-1 bg-gray-800/30 border-t border-gray-700">
                 <div className="flex justify-between items-center text-xs text-gray-500">
                     <div>
@@ -273,6 +332,7 @@ lang - Show current language`;
                         <span className="ml-1">run</span>
                         <span className="ml-1">clear</span>
                         <span className="ml-1">help</span>
+                        <span className="ml-1">status</span>
                     </div>
                     <div>
                         <span className="font-medium text-gray-400">↑↓</span>
