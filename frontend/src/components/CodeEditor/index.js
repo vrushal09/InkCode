@@ -8,6 +8,8 @@ export { default as EnhancedCodeEditorPanel } from './EnhancedCodeEditorPanel';
 export { default as EditorFeaturesPanel } from './EditorFeaturesPanel';
 export { default as TerminalPanel } from './TerminalPanel';
 export { default as ControlPanel } from './ControlPanel';
+export { default as AIAssistantPanel } from './AIAssistantPanel';
+export { default as LivePreviewPanel } from './LivePreviewPanel';
 // Legacy components (kept for compatibility)
 export { default as OutputPanel } from './OutputPanel';
 export { default as InputPanel } from './InputPanel';

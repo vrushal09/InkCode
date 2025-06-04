@@ -15,6 +15,7 @@ import CommentsSystem from "./CommentsSystem";
 import FileExplorer from "../FileExplorer";
 import FileTabs from "../FileTabs";
 import LivePreviewPanel from "./LivePreviewPanel";
+import AIAssistantPanel from "./AIAssistantPanel";
 
 // Import hooks and utils
 import { useCodeEditor } from "../../hooks/useCodeEditor";
@@ -110,9 +111,7 @@ const CodeEditorContainer = () => {
     } = useComments(roomId);    const {
         userCursors,
         setEditorElement
-    } = useCursors(roomId, activeFile);
-
-    // Live preview hook
+    } = useCursors(roomId, activeFile);    // Live preview hook
     const {
         isPreviewOpen,
         connectedFiles,
@@ -124,6 +123,21 @@ const CodeEditorContainer = () => {
         isHTMLFile,
         autoDetectConnectedFiles
     } = useLivePreview(openFiles, getFileContent, getFileObject, activeFile);
+
+    // AI Assistant state
+    const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
+
+    const toggleAIAssistant = () => {
+        setIsAIAssistantOpen(!isAIAssistantOpen);
+    };
+
+    const handleAICodeUpdate = (newCode) => {
+        if (activeFile && newCode) {
+            updateFileContent(activeFile, newCode);
+            setCode(newCode);
+            toast.success('Code updated by AI Assistant');
+        }
+    };
 
     // Track editor element for cursor positioning
     const [editorElementRef, setEditorElementRef] = useState(null);
@@ -159,6 +173,7 @@ const CodeEditorContainer = () => {
                 codeBlame={codeBlame}
                 unreadCount={unreadCount}
                 toggleChat={toggleChat}
+                toggleAIAssistant={toggleAIAssistant}
                 navigate={navigate}
             />
 
@@ -290,9 +305,7 @@ const CodeEditorContainer = () => {
             <CursorOverlay 
                 userCursors={userCursors}
                 editorElement={editorElementRef}
-            />
-
-            {/* Live Preview Panel */}
+            />            {/* Live Preview Panel */}
             <LivePreviewPanel
                 isOpen={isPreviewOpen}
                 previewContent={previewContent}
@@ -302,6 +315,15 @@ const CodeEditorContainer = () => {
                 connectFile={connectFile}
                 disconnectFile={disconnectFile}
                 onClose={() => togglePreview()}
+            />
+
+            {/* AI Assistant Panel */}
+            <AIAssistantPanel
+                isOpen={isAIAssistantOpen}
+                onClose={toggleAIAssistant}
+                currentCode={code}
+                currentLanguage={language}
+                onCodeUpdate={handleAICodeUpdate}
             />
         </div>
     );

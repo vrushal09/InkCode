@@ -1,10 +1,12 @@
 import { useUserPreferences } from '../../contexts/UserPreferencesContext';
+import { SparklesIcon } from '@heroicons/react/24/outline';
 
 const EditorHeader = ({
     collaborators,
     codeBlame,
     unreadCount,
     toggleChat,
+    toggleAIAssistant,
     navigate
 }) => {
     const { preferences } = useUserPreferences();
@@ -70,6 +72,15 @@ const EditorHeader = ({
                                 <span className="text-xs text-green-300 font-medium">Auto-save: ON</span>
                             </div>
                         )}
+                        
+                        {/* AI Assistant Button */}
+                        <button
+                            onClick={toggleAIAssistant}
+                            className="p-2 bg-[#1a1a23] border border-gray-700 rounded-lg hover:bg-[#2a2a35] transition-colors group"
+                            title="AI Assistant"
+                        >
+                            <SparklesIcon className="h-5 w-5 text-violet-400 group-hover:text-violet-300" />
+                        </button>
                         
                         {/* Chat Toggle Button */}
                         <button
