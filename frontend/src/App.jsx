@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './config/firebase';
 import { getThemeInfo } from './config/themes';
+import React from "react";
 
 // Pages
 import Auth from './pages/Auth';
@@ -18,12 +19,13 @@ import { UserPreferencesProvider, useUserPreferences } from './contexts/UserPref
 
 // Styles
 import 'react-toastify/dist/ReactToastify.css';
+import Loader from './components/Loader';
 
 function AppContent() {
   const { preferences } = useUserPreferences();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+
   // Get theme info to determine if it's light or dark
   const themeInfo = getThemeInfo(preferences.theme);
   const isLightTheme = themeInfo.category === 'Light';
@@ -39,50 +41,47 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className={`flex items-center justify-center min-h-screen ${
-        isLightTheme ? 'bg-gray-100' : 'bg-primary'
-      }`}>
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
+      <div className="h-screen w-screen bg-black flex items-center justify-center">
+        <Loader />
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen ${
-      isLightTheme 
-        ? 'bg-gray-100 text-gray-900' 
-        : 'bg-primary text-white'
-    }`}>
+    <div className={`min-h-screen ${isLightTheme
+      ? 'bg-gray-100 text-gray-900'
+      : 'bg-primary text-white'
+      }`}>
       <Routes>
-        <Route 
-          path="/" 
-          element={user ? <Navigate to="/dashboard" /> : <Auth />} 
+        <Route
+          path="/"
+          element={user ? <Navigate to="/dashboard" /> : <Auth />}
         />
-        <Route 
-          path="/auth" 
-          element={<Auth />} 
+        <Route
+          path="/auth"
+          element={<Auth />}
         />
-        <Route 
-          path="/dashboard" 
-          element={user ? <Dashboard /> : <Navigate to="/" />} 
+        <Route
+          path="/dashboard"
+          element={user ? <Dashboard /> : <Navigate to="/" />}
         />
-        <Route 
-          path="/editor/:roomId" 
-          element={user ? <CodeEditor /> : <Navigate to="/" />} 
+        <Route
+          path="/editor/:roomId"
+          element={user ? <CodeEditor /> : <Navigate to="/" />}
         />
-        <Route 
-          path="/profile" 
-          element={user ? <Profile /> : <Navigate to="/" />} 
-        />        <Route 
-          path="/join-team" 
-          element={<JoinTeam />} 
+        <Route
+          path="/profile"
+          element={user ? <Profile /> : <Navigate to="/" />}
+        />        <Route
+          path="/join-team"
+          element={<JoinTeam />}
         />
-        <Route 
-          path="/instructions" 
-          element={user ? <Instructions /> : <Navigate to="/" />} 
+        <Route
+          path="/instructions"
+          element={user ? <Instructions /> : <Navigate to="/" />}
         />
       </Routes>
-      <ToastContainer 
+      <ToastContainer
         position="bottom-right"
         theme={isLightTheme ? 'light' : 'dark'}
         autoClose={3000}
