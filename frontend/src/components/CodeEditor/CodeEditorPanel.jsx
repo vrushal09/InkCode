@@ -42,26 +42,26 @@ const CodeEditorPanel = ({
     // Debug logging to identify the issue
     console.log('CodeEditorPanel - language:', language);
     console.log('CodeEditorPanel - languageExtensions[language]:', languageExtensions[language]);
-    console.log('CodeEditorPanel - typeof languageExtensions[language]:', typeof languageExtensions[language]);return (
-        <div className="flex-1 bg-[#111119] border border-gray-800 rounded-lg overflow-hidden relative">
-            <div className="p-4 border-b border-gray-800">
-                <h3 className="text-lg font-semibold flex items-center">
-                    <svg className="h-5 w-5 mr-2 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    console.log('CodeEditorPanel - typeof languageExtensions[language]:', typeof languageExtensions[language]);    return (
+        <div className="flex-1 bg-[#0A0A0A] border border-[#242424] rounded-xl overflow-hidden relative">
+            <div className="p-6 border-b border-[#242424]">
+                <h3 className="text-lg font-semibold text-white flex items-center">
+                    <svg className="h-5 w-5 mr-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                     </svg>
                     {activeFile ? activeFile.split('/').pop() : 'Code Editor'}
                     {activeFile && (
-                        <span className="ml-2 text-sm text-gray-400 font-normal">
+                        <span className="ml-2 text-sm text-white/60 font-normal">
                             ({language})
                         </span>
                     )}
                 </h3>
                 {activeFile && (
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-white/60 mt-2">
                         {activeFile}
                     </p>
                 )}
-            </div>            <div className="h-[400px] overflow-y-auto" ref={editorContainerRef}>
+            </div>            <div className="h-[400px] overflow-y-auto bg-[#000000]" ref={editorContainerRef}>
                 <CodeMirror
                     value={code}
                     height="100%"

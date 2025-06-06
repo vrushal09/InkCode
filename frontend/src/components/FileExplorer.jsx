@@ -52,53 +52,36 @@ const FileExplorer = ({
         const newCollapsedState = !isCollapsed;
         onToggleCollapse();
         updatePreferences({ sidebarCollapsed: newCollapsedState });
-    };
-
-    if (isCollapsed) {
+    };    if (isCollapsed) {
         return (
-            <div className="bg-gray-900 border-r border-gray-700 h-full w-12 flex flex-col items-center py-4">
-                <button
-                    onClick={handleToggleCollapse}
-                    className="p-2 hover:bg-gray-800 rounded transition-colors"
-                    title="Expand Explorer"
-                >
-                    <ChevronDoubleRightIcon className="w-5 h-5 text-gray-400" />
-                </button>
-                <div className="mt-4">
-                    <FolderIcon className="w-6 h-6 text-blue-400" />
-                </div>
+            <div className="bg-[#0A0A0A] border-r border-[#242424] h-full w-0 overflow-hidden transition-all duration-200">
+                {/* Collapsed state is handled by parent container width */}
             </div>
         );
     }
 
     return (
-        <div className="bg-[#111119] border-r border-gray-800 h-full flex flex-col">
+        <div className="bg-[#0A0A0A] border-r border-[#242424] h-full flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between p-3 border-b border-gray-800">
+            <div className="flex items-center justify-between p-4 border-b border-[#242424]">
                 <div className="flex items-center gap-2">
-                    <FolderIcon className="w-5 h-5 text-violet-400" />
-                    <span className="text-sm font-medium text-gray-300">EXPLORER</span>
+                    <FolderIcon className="w-5 h-5 text-[#FFFFFF]" />
+                    <span className="text-sm font-medium text-[#FFFFFF]">EXPLORER</span>
                 </div>
                 <div className="flex items-center gap-1">
                     <button
                         onClick={() => setShowNewFileInput(true)}
-                        className="p-1 hover:bg-gray-800/50 rounded transition-colors"
+                        className="p-1.5 hover:bg-[#242424] rounded-md transition-colors"
                         title="New File"
                     >
-                        <PlusIcon className="w-4 h-4 text-violet-400" />
+                        <PlusIcon className="w-4 h-4 text-[#FFFFFF]/60 hover:text-[#FFFFFF]" />
                     </button>
                     <button
                         onClick={() => setShowNewFolderInput(true)}
-                        className="p-1 hover:bg-gray-800/50 rounded transition-colors"
+                        className="p-1.5 hover:bg-[#242424] rounded-md transition-colors"
                         title="New Folder"
                     >
-                        <FolderIcon className="w-4 h-4 text-violet-400" />
-                    </button>                    <button
-                        onClick={handleToggleCollapse}
-                        className="p-1 hover:bg-gray-800/50 rounded transition-colors"
-                        title="Collapse Explorer"
-                    >
-                        <ChevronDoubleLeftIcon className="w-4 h-4 text-violet-400" />
+                        <FolderIcon className="w-4 h-4 text-[#FFFFFF]/60 hover:text-[#FFFFFF]" />
                     </button>
                 </div>
             </div>
@@ -107,10 +90,10 @@ const FileExplorer = ({
             <div className="flex-1 overflow-y-auto">
                 {/* New File Input */}
                 {showNewFileInput && (
-                    <div className="flex items-center px-2 py-1 bg-[#111119] border-b border-gray-800">
+                    <div className="flex items-center px-4 py-2 bg-[#000000] border-b border-[#242424]">
                         <div className="w-6 h-4 mr-2"></div>
                         <div className="w-4 h-4 mr-2 flex items-center justify-center">
-                            <div className="w-3 h-3 bg-violet-500 rounded-sm"></div>
+                            <div className="w-3 h-3 bg-[#FFFFFF] rounded-sm"></div>
                         </div>
                         <input
                             type="text"
@@ -119,7 +102,7 @@ const FileExplorer = ({
                             onBlur={() => handleCreateItem('file')}
                             onKeyDown={(e) => handleKeyPress(e, 'file')}
                             placeholder="Enter file name..."
-                            className="bg-[#09090f] text-gray-300 text-sm px-2 py-1 rounded flex-1 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                            className="bg-[#0A0A0A] text-[#FFFFFF] text-sm px-2 py-1 rounded border border-[#242424] flex-1 focus:outline-none focus:ring-2 focus:ring-[#FFFFFF]/20 focus:border-[#FFFFFF]/30"
                             autoFocus
                         />
                     </div>
@@ -127,10 +110,10 @@ const FileExplorer = ({
 
                 {/* New Folder Input */}
                 {showNewFolderInput && (
-                    <div className="flex items-center px-2 py-1 bg-[#111119] border-b border-gray-800">
+                    <div className="flex items-center px-4 py-2 bg-[#000000] border-b border-[#242424]">
                         <div className="w-6 h-4 mr-2"></div>
                         <div className="w-4 h-4 mr-2 flex items-center justify-center">
-                            <FolderIcon className="w-4 h-4 text-violet-400" />
+                            <FolderIcon className="w-4 h-4 text-[#FFFFFF]/60" />
                         </div>
                         <input
                             type="text"
@@ -139,7 +122,7 @@ const FileExplorer = ({
                             onBlur={() => handleCreateItem('folder')}
                             onKeyDown={(e) => handleKeyPress(e, 'folder')}
                             placeholder="Enter folder name..."
-                            className="bg-[#09090f] text-gray-300 text-sm px-2 py-1 rounded flex-1 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                            className="bg-[#0A0A0A] text-[#FFFFFF] text-sm px-2 py-1 rounded border border-[#242424] flex-1 focus:outline-none focus:ring-2 focus:ring-[#FFFFFF]/20 focus:border-[#FFFFFF]/30"
                             autoFocus
                         />
                     </div>
@@ -150,7 +133,8 @@ const FileExplorer = ({
                     <div className="py-2">
                         {Object.entries(fileTree.root.children || {}).map(([key, node]) => {
                             const path = `root/${key}`;
-                            return (                                <FileNode
+                            return (
+                                <FileNode
                                     key={path}
                                     node={node}
                                     path={path}
@@ -173,10 +157,12 @@ const FileExplorer = ({
 
                 {/* Empty State */}
                 {(!fileTree.root || !fileTree.root.children || Object.keys(fileTree.root.children).length === 0) && (
-                    <div className="p-4 text-center text-gray-400">
-                        <FolderIcon className="w-8 h-8 mx-auto mb-2 text-violet-500/30" />
-                        <p className="text-sm">No files yet</p>
-                        <p className="text-xs">Create your first file or folder</p>
+                    <div className="p-6 text-center">
+                        <div className="w-12 h-12 mx-auto mb-4 bg-[#242424] rounded-lg flex items-center justify-center">
+                            <FolderIcon className="w-6 h-6 text-[#FFFFFF]/60" />
+                        </div>
+                        <h3 className="text-sm font-medium text-[#FFFFFF] mb-2">No files yet</h3>
+                        <p className="text-xs text-[#FFFFFF]/60">Create your first file or folder to get started</p>
                     </div>
                 )}
             </div>

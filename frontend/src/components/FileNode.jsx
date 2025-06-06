@@ -124,15 +124,16 @@ const FileNode = ({
     };
 
     return (
-        <div className="relative">
-            {/* Main Node */}
+        <div className="relative">            {/* Main Node */}
             <div
                 className={`
-                    flex items-center px-2 py-1 rounded cursor-pointer select-none group
-                    hover:bg-gray-800/50 transition-colors
-                    ${isActive ? 'bg-violet-600/20 border-l-2 border-l-violet-500' : ''}
+                    flex items-center px-3 py-2 rounded-lg cursor-pointer select-none group transition-colors
+                    ${isActive 
+                        ? 'bg-[#FFFFFF]/10 text-[#FFFFFF] border-l-2 border-l-[#FFFFFF]' 
+                        : 'text-[#FFFFFF]/70 hover:bg-[#242424] hover:text-[#FFFFFF]'
+                    }
                 `}
-                style={{ paddingLeft: `${level * 12 + 8}px` }}
+                style={{ paddingLeft: `${level * 16 + 12}px` }}
                 onContextMenu={handleRightClick}
                 onClick={() => {
                     if (node.type === 'folder') {
@@ -144,22 +145,20 @@ const FileNode = ({
             >
                 {/* Expand/Collapse Icon for folders */}
                 {node.type === 'folder' && (
-                    <div className="w-4 h-4 flex items-center justify-center mr-1">
+                    <div className="w-4 h-4 flex items-center justify-center mr-2">
                         {isExpanded ? (
-                            <ChevronDownIcon className="w-3 h-3 text-gray-400" />
+                            <ChevronDownIcon className="w-3 h-3 text-[#FFFFFF]/60" />
                         ) : (
-                            <ChevronRightIcon className="w-3 h-3 text-gray-400" />
+                            <ChevronRightIcon className="w-3 h-3 text-[#FFFFFF]/60" />
                         )}
                     </div>
-                )}
-
-                {/* File/Folder Icon */}
+                )}                {/* File/Folder Icon */}
                 <div className="w-4 h-4 mr-2 flex items-center justify-center">
                     {node.type === 'folder' ? (
                         isExpanded ? (
-                            <FolderOpenIcon className="w-4 h-4 text-violet-400" />
+                            <FolderOpenIcon className="w-4 h-4 text-[#FFFFFF]" />
                         ) : (
-                            <FolderIcon className="w-4 h-4 text-violet-400" />
+                            <FolderIcon className="w-4 h-4 text-[#FFFFFF]" />
                         )
                     ) : (
                         <DocumentIcon className={`w-4 h-4 ${getFileIcon(node.name)}`} />
@@ -174,24 +173,24 @@ const FileNode = ({
                         onChange={(e) => setNewName(e.target.value)}
                         onBlur={handleRename}
                         onKeyDown={(e) => handleKeyPress(e, 'rename')}
-                        className="bg-gray-700 text-white text-sm px-1 rounded flex-1 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                        className="bg-[#000000] text-[#FFFFFF] text-sm px-2 py-1 rounded border border-[#242424] flex-1 focus:outline-none focus:ring-2 focus:ring-[#FFFFFF]/20 focus:border-[#FFFFFF]/30"
                         autoFocus
                     />
                 ) : (
-                    <span className="text-sm text-gray-200 flex-1 truncate">
+                    <span className="text-sm flex-1 truncate">
                         {node.displayName || node.name}
                     </span>
                 )}
 
                 {/* Context Menu Button */}
                 <button
-                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-700 rounded transition-opacity"
+                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-[#FFFFFF]/10 rounded transition-opacity"
                     onClick={(e) => {
                         e.stopPropagation();
                         setShowContextMenu(!showContextMenu);
                     }}
                 >
-                    <EllipsisVerticalIcon className="w-3 h-3 text-gray-400" />
+                    <EllipsisVerticalIcon className="w-3 h-3 text-[#FFFFFF]/60" />
                 </button>
             </div>
 

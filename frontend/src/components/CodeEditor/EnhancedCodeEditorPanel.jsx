@@ -98,39 +98,38 @@ const EnhancedCodeEditorPanel = ({
     // Handle editor creation
     const handleEditorMount = (editor, view) => {
         editorViewRef.current = view;
-    };
-
-    return (        <div className="h-full bg-[#111119] border border-gray-800 rounded-lg overflow-hidden relative">
+    };    return (
+        <div className="h-full bg-[#0A0A0A] border border-[#242424] rounded-xl overflow-hidden relative">
             {/* Header with enhanced controls - Compact */}
-            <div className="p-2 border-b border-gray-800">
+            <div className="p-3 border-b border-[#242424]">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                        <h3 className="text-sm font-semibold flex items-center">
-                            <svg className="h-4 w-4 mr-1 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <h3 className="text-sm font-semibold flex items-center text-[#FFFFFF]">
+                            <svg className="h-4 w-4 mr-2 text-[#FFFFFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                             </svg>
-                            {activeFile ? activeFile.split('/').pop() : 'Code Editor'}                            {activeFile && (
-                                <span className="ml-1 text-xs text-gray-400 font-normal">
+                            {activeFile ? activeFile.split('/').pop() : 'Code Editor'}
+                            {activeFile && (
+                                <span className="ml-2 text-xs text-[#FFFFFF]/60 font-normal">
                                     ({language})
                                 </span>
                             )}
                         </h3>
                         {activeFile && (
-                            <p className="text-xs text-gray-500 ml-2">
+                            <p className="text-xs text-[#FFFFFF]/60 ml-3">
                                 {activeFile}
                             </p>
                         )}
-                    </div>
-                      {/* Enhanced controls - Compact */}
-                    <div className="flex items-center gap-1">
+                    </div>                      {/* Enhanced controls - Compact */}
+                    <div className="flex items-center gap-2">
                         {/* Live Preview Button - Show for HTML files */}
                         {(isHTMLFile && isHTMLFile()) && (
                             <button
                                 onClick={togglePreview}
-                                className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${
+                                className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg transition-colors ${
                                     isPreviewOpen 
-                                        ? 'bg-orange-600 hover:bg-orange-700 text-white' 
-                                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                        ? 'bg-[#242424] hover:bg-[#242424]/80 text-[#FFFFFF]' 
+                                        : 'bg-[#FFFFFF] text-[#000000] hover:bg-[#FFFFFF]/90'
                                 }`}
                                 title={isPreviewOpen ? 'Close Live Preview' : 'Open Live Preview'}
                             >
@@ -145,7 +144,7 @@ const EnhancedCodeEditorPanel = ({
                         {/* Search & Replace Button */}
                         <button
                             onClick={handleToggleSearch}
-                            className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors"
+                            className="flex items-center gap-2 px-3 py-1.5 text-xs bg-[#242424] hover:bg-[#242424]/80 text-[#FFFFFF] rounded-lg transition-colors"
                             title="Search & Replace (Ctrl+F)"
                         >
                             <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -157,7 +156,7 @@ const EnhancedCodeEditorPanel = ({
                         {/* Format Code Button */}
                         <button
                             onClick={handleFormatCode}
-                            className="flex items-center gap-1 px-2 py-1 text-xs bg-violet-700 hover:bg-violet-600 text-white rounded transition-colors"
+                            className="flex items-center gap-2 px-3 py-1.5 text-xs bg-[#FFFFFF] text-[#000000] hover:bg-[#FFFFFF]/90 rounded-lg transition-colors"
                             title="Format Code (Shift+Alt+F)"
                         >
                             <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -169,10 +168,10 @@ const EnhancedCodeEditorPanel = ({
                         {/* Minimap Toggle */}
                         <button
                             onClick={() => setShowMinimap(!showMinimap)}
-                            className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${
+                            className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg transition-colors ${
                                 showMinimap 
-                                    ? 'bg-green-700 hover:bg-green-600 text-white' 
-                                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                                    ? 'bg-[#FFFFFF] text-[#000000] hover:bg-[#FFFFFF]/90' 
+                                    : 'bg-[#242424] hover:bg-[#242424]/80 text-[#FFFFFF]'
                             }`}
                             title="Toggle Minimap"
                         >
@@ -183,25 +182,23 @@ const EnhancedCodeEditorPanel = ({
                         </button>
                     </div>
                 </div>
-            </div>
-
-            {/* Feature descriptions - Compact */}
-            <div className="px-2 py-1 bg-gray-800/50 border-b border-gray-700">
-                <div className="flex flex-wrap gap-2 text-xs text-gray-400">
-                    <span className="flex items-center gap-1">
-                        <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+            </div>            {/* Feature descriptions - Compact */}
+            <div className="px-3 py-2 bg-[#000000] border-b border-[#242424]">
+                <div className="flex flex-wrap gap-3 text-xs text-[#FFFFFF]/60">
+                    <span className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 bg-[#FFFFFF] rounded-full"></div>
                         Autocomplete
                     </span>
-                    <span className="flex items-center gap-1">
-                        <div className="w-1 h-1 bg-blue-500 rounded-full"></div>
+                    <span className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 bg-[#FFFFFF] rounded-full"></div>
                         Search
                     </span>
-                    <span className="flex items-center gap-1">
-                        <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
+                    <span className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 bg-[#FFFFFF] rounded-full"></div>
                         Format
                     </span>
-                    <span className="flex items-center gap-1">
-                        <div className="w-1 h-1 bg-yellow-500 rounded-full"></div>
+                    <span className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 bg-[#FFFFFF] rounded-full"></div>
                         Minimap
                     </span>
                 </div>
@@ -237,21 +234,19 @@ const EnhancedCodeEditorPanel = ({
                         onChange={handleCodeChange}
                         onCreateEditor={handleEditorMount}
                     />
-                </div>
-
-                {/* Minimap */}
+                </div>                {/* Minimap */}
                 {showMinimap && (
-                    <div className="absolute top-0 right-0 w-28 h-full bg-gray-900/90 border-l border-gray-700 overflow-hidden">
+                    <div className="absolute top-0 right-0 w-28 h-full bg-[#000000]/90 border-l border-[#242424] overflow-hidden">
                         <div className="p-2">
-                            <div className="text-xs text-gray-400 mb-2 font-semibold">Minimap</div>
+                            <div className="text-xs text-[#FFFFFF]/80 mb-2 font-semibold">Minimap</div>
                             <div className="space-y-px">
                                 {code.split('\n').slice(0, 50).map((line, index) => (
                                     <div
                                         key={index}
-                                        className="h-1 bg-gray-600 rounded-sm opacity-60 hover:opacity-100 cursor-pointer transition-opacity"
+                                        className="h-1 bg-[#242424] rounded-sm opacity-60 hover:opacity-100 cursor-pointer transition-opacity"
                                         style={{
                                             width: `${Math.min(100, Math.max(10, line.length * 2))}%`,
-                                            backgroundColor: line.trim() ? '#6b7280' : '#374151'
+                                            backgroundColor: line.trim() ? '#FFFFFF' : '#242424'
                                         }}
                                         title={`Line ${index + 1}: ${line.substring(0, 50)}${line.length > 50 ? '...' : ''}`}
                                         onClick={() => {
@@ -266,7 +261,7 @@ const EnhancedCodeEditorPanel = ({
                                     />
                                 ))}
                                 {code.split('\n').length > 50 && (
-                                    <div className="text-xs text-gray-500 mt-2">
+                                    <div className="text-xs text-[#FFFFFF]/60 mt-2">
                                         +{code.split('\n').length - 50} more lines
                                     </div>
                                 )}
@@ -275,13 +270,13 @@ const EnhancedCodeEditorPanel = ({
                     </div>
                 )}
             </div>            {/* Help text - Compact */}
-            <div className="px-2 py-1 bg-gray-800/30 border-t border-gray-700">
-                <div className="text-xs text-gray-500">
-                    <span className="font-medium text-gray-400">Shortcuts:</span>
-                    <span className="ml-1">Ctrl+F</span>
-                    <span className="ml-1">Shift+Alt+F</span>
-                    <span className="ml-1">Ctrl+Space</span>
-                    <span className="ml-1">Ctrl+Z/Y</span>
+            <div className="px-3 py-2 bg-[#000000] border-t border-[#242424]">
+                <div className="text-xs text-[#FFFFFF]/60">
+                    <span className="font-medium text-[#FFFFFF]/80">Shortcuts:</span>
+                    <span className="ml-2">Ctrl+F</span>
+                    <span className="ml-2">Shift+Alt+F</span>
+                    <span className="ml-2">Ctrl+Space</span>
+                    <span className="ml-2">Ctrl+Z/Y</span>
                 </div>
             </div>
         </div>

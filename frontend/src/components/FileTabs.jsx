@@ -4,7 +4,9 @@ import { XMarkIcon, DocumentIcon } from '@heroicons/react/24/outline';
 const FileTabs = ({ openFiles, activeFile, onSelectFile, onCloseFile, getFileIcon }) => {
     if (openFiles.length === 0) {
         return null;
-    }    const getFileName = (path) => {
+    }
+
+    const getFileName = (path) => {
         const parts = path.split('/');
         const fileName = parts.pop();
         // Convert Firebase key back to display name
@@ -34,7 +36,7 @@ const FileTabs = ({ openFiles, activeFile, onSelectFile, onCloseFile, getFileIco
     };
 
     return (
-        <div className="flex items-center bg-[#111119] border-b border-gray-800 overflow-x-auto">
+        <div className="flex items-center bg-[#0A0A0A] border-b border-[#242424] overflow-x-auto">
             <div className="flex items-center h-10">
                 {openFiles.map((filePath) => {
                     const fileName = getFileName(filePath);
@@ -43,21 +45,27 @@ const FileTabs = ({ openFiles, activeFile, onSelectFile, onCloseFile, getFileIco
                     return (
                         <div
                             key={filePath}
-                            className={`flex items-center px-3 h-full border-r border-gray-800 ${isActive ? 'bg-[#09090f]' : 'hover:bg-gray-800/30'}`}
+                            className={`group flex items-center px-4 h-full border-r border-[#242424] cursor-pointer transition-colors ${
+                                isActive 
+                                    ? 'bg-[#000000] text-[#FFFFFF] border-b-2 border-[#FFFFFF]' 
+                                    : 'bg-[#0A0A0A] text-[#FFFFFF]/70 hover:bg-[#242424] hover:text-[#FFFFFF]'
+                            }`}
                             onClick={() => onSelectFile(filePath)}
                         >
                             <div className="w-4 h-4 mr-2">
                                 <DocumentIcon className={`w-4 h-4 ${getFileIconColor(fileName)}`} />
                             </div>
-                            <span className="text-sm text-gray-300">{fileName}</span>
-                            <button
-                                className="ml-2 p-1 rounded-full hover:bg-violet-500/10"
+                            <span className="text-sm font-medium max-w-32 truncate">
+                                {fileName}
+                            </span>                            <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onCloseFile(filePath);
                                 }}
+                                className="ml-2 p-1 rounded hover:bg-[#FFFFFF]/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Close file"
                             >
-                                <XMarkIcon className="w-3 h-3 text-violet-400" />
+                                <XMarkIcon className="w-3 h-3 text-[#FFFFFF]/60 hover:text-[#FFFFFF]" />
                             </button>
                         </div>
                     );

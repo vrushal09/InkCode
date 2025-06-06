@@ -17,8 +17,7 @@ export const GlobalStyles = () => {
             }
             .comment-gutter-empty {
                 transition: all 0.2s ease;
-            }
-            .comment-gutter-empty:hover::after {
+            }            .comment-gutter-empty:hover::after {
                 content: '+';
                 display: flex;
                 align-items: center;
@@ -26,8 +25,8 @@ export const GlobalStyles = () => {
                 width: 18px;
                 height: 18px;
                 font-size: 16px;
-                color: white;
-                background-color: rgba(139, 92, 246, 0.7);
+                color: black;
+                background-color: rgba(255, 255, 255, 0.9);
                 border-radius: 50%;
                 margin: 0 auto;
             }
@@ -37,21 +36,21 @@ export const GlobalStyles = () => {
                 width: 8px;
             }
             .custom-scrollbar::-webkit-scrollbar-track {
-                background: #1f2937;
+                background: #242424;
                 border-radius: 4px;
             }
             .custom-scrollbar::-webkit-scrollbar-thumb {
-                background: #4b5563;
+                background: #ffffff40;
                 border-radius: 4px;
             }
             .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                background: #6b7280;
+                background: #ffffff60;
             }
             
             /* Firefox scrollbar */
             .custom-scrollbar {
                 scrollbar-width: thin;
-                scrollbar-color: #4b5563 #1f2937;
+                scrollbar-color: #ffffff40 #242424;
             }
 
             /* Chat animation styles */
@@ -90,13 +89,13 @@ export const GlobalStyles = () => {
             
             @keyframes pulse {
                 0% {
-                    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);
+                    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
                 }
                 70% {
-                    box-shadow: 0 0 0 10px rgba(139, 92, 246, 0);
+                    box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
                 }
                 100% {
-                    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
+                    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
                 }
             }
 

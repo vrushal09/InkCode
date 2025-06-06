@@ -217,64 +217,60 @@ To start backend server:
         const fileName = activeFile ? activeFile.split('/').pop() : 'editor';
         return `${fileName}:${language}$`;
     };    const renderContent = (item) => {
-        const isLightTheme = preferences.terminalTheme === 'light';
-        
         if (item.type === 'command') {
             return (
-                <div className="flex items-start gap-1 mb-1">
-                    <span className={`${isLightTheme ? 'text-green-600' : 'text-green-400'} font-mono text-xs`}>{getPrompt()}</span>
-                    <span className={`${isLightTheme ? 'text-black' : 'text-white'} font-mono text-xs`}>{item.content}</span>
-                    <span className={`${isLightTheme ? 'text-gray-600' : 'text-gray-500'} text-xs ml-auto`}>{item.timestamp}</span>
+                <div className="flex items-start gap-2 mb-2">
+                    <span className="text-[#FFFFFF] font-mono text-sm">{getPrompt()}</span>
+                    <span className="text-[#FFFFFF] font-mono text-sm">{item.content}</span>
+                    <span className="text-[#FFFFFF]/50 text-sm ml-auto">{item.timestamp}</span>
                 </div>
             );
         } else {
             return (
-                <div className="mb-1">
-                    <pre className={`${isLightTheme ? 'text-gray-800' : 'text-gray-300'} font-mono text-xs whitespace-pre-wrap break-words`}>
+                <div className="mb-3">
+                    <pre className="text-[#FFFFFF]/90 font-mono text-sm whitespace-pre-wrap break-words">
                         {item.content}
                     </pre>
-                    <span className={`${isLightTheme ? 'text-gray-600' : 'text-gray-500'} text-xs`}>{item.timestamp}</span>
+                    <span className="text-[#FFFFFF]/50 text-sm">{item.timestamp}</span>
                 </div>
             );
         }
-    };
-
-    return (
-        <div className="h-full bg-[#111119] border border-gray-800 rounded-lg overflow-hidden flex flex-col">
-            {/* Terminal Header - Compact */}
-            <div className="px-3 py-2 border-b border-gray-800 bg-[#0a0f]">
+    };return (
+        <div className="h-full bg-[#0A0A0A] border border-[#242424] rounded-xl overflow-hidden flex flex-col">
+            {/* Terminal Header */}
+            <div className="px-4 py-3 border-b border-[#242424] bg-[#000000]">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold flex items-center">
-                        <svg className="h-4 w-4 mr-1 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <h3 className="text-base font-medium flex items-center text-[#FFFFFF]">
+                        <svg className="h-5 w-5 mr-2 text-[#FFFFFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                         Terminal
-                        <span className="ml-1 text-xs text-gray-400 font-normal">
+                        <span className="ml-2 text-sm text-[#FFFFFF]/60 font-normal">
                             ({language})
                         </span>
                     </h3>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
                         {/* Run Button */}
                         <button
                             onClick={executeCode}
                             disabled={isExecuting}
-                            className="flex items-center gap-1 px-2 py-1 bg-green-700 hover:bg-green-600 disabled:bg-gray-600 text-white rounded transition-colors text-xs"
+                            className="flex items-center gap-2 px-3 py-1.5 bg-[#FFFFFF] text-[#000000] hover:bg-[#FFFFFF]/90 disabled:bg-[#FFFFFF]/50 disabled:cursor-not-allowed rounded-lg transition-colors text-sm font-medium"
                             title="Run Code (Ctrl+Enter)"
                         >
                             {isExecuting ? (
                                 <>
-                                    <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
+                                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
-                                    Run
+                                    Running...
                                 </>
                             ) : (
                                 <>
-                                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m6-10V8a3 3 0 01-3 3H9a3 3 0 01-3-3V4a3 3 0 013 3z" />
                                     </svg>
-                                    Run
+                                    Run Code
                                 </>
                             )}
                         </button>
@@ -282,26 +278,27 @@ To start backend server:
                         {/* Clear Button */}
                         <button
                             onClick={() => setTerminalHistory([])}
-                            className="flex items-center gap-1 px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors text-xs"
+                            className="flex items-center gap-2 px-3 py-1.5 bg-[#242424] text-[#FFFFFF] hover:bg-[#242424]/80 rounded-lg transition-colors text-sm"
                             title="Clear Terminal"
                         >
-                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                             Clear
                         </button>
                     </div>
                 </div>
-            </div>            {/* Terminal Content - Responsive sizing */}
+            </div>            {/* Terminal Content */}
             <div 
                 ref={terminalRef}
-                className={`flex-1 p-2 ${preferences.terminalTheme === 'light' ? 'bg-gray-100 text-black' : 'bg-black text-white'} overflow-y-auto font-mono`}
+                className="flex-1 p-4 bg-[#000000] text-[#FFFFFF] overflow-y-auto font-mono custom-scrollbar"
                 style={{ fontSize: `${preferences.terminalFontSize}px` }}
-            >                {/* Welcome message */}
+            >
+                {/* Welcome message */}
                 {terminalHistory.length === 0 && (
-                    <div className={`${preferences.terminalTheme === 'light' ? 'text-gray-600' : 'text-gray-400'} mb-2`}>
-                        <p className="text-xs">InkCode Terminal - Ready to execute your code!</p>
-                        <p className="text-xs mt-1">Type 'help' for available commands or 'run' to execute code.</p>
+                    <div className="text-[#FFFFFF]/60 mb-4">
+                        <p className="text-sm">InkCode Terminal - Ready to execute your code!</p>
+                        <p className="text-sm mt-2">Type 'help' for available commands or 'run' to execute code.</p>
                     </div>
                 )}
 
@@ -310,33 +307,37 @@ To start backend server:
                     <div key={index}>
                         {renderContent(item)}
                     </div>
-                ))}                {/* Current input line */}
-                <form onSubmit={handleCommandSubmit} className="flex items-center gap-1 mt-1">
-                    <span className={`${preferences.terminalTheme === 'light' ? 'text-green-600' : 'text-green-400'} font-mono text-xs`}>{getPrompt()}</span>
+                ))}
+
+                {/* Current input line */}
+                <form onSubmit={handleCommandSubmit} className="flex items-center gap-2 mt-2">
+                    <span className="text-[#FFFFFF] font-mono text-sm">{getPrompt()}</span>
                     <input
                         ref={inputRef}
                         type="text"
                         value={currentCommand}
                         onChange={(e) => setCurrentCommand(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        className={`flex-1 bg-transparent ${preferences.terminalTheme === 'light' ? 'text-black' : 'text-white'} font-mono text-xs outline-none border-none`}
+                        className="flex-1 bg-transparent text-[#FFFFFF] font-mono text-sm outline-none border-none placeholder-[#FFFFFF]/50"
                         placeholder="Enter command..."
                         autoFocus
                     />
                 </form>
-            </div>            {/* Terminal Footer - Compact */}
-            <div className="px-2 py-1 bg-gray-800/30 border-t border-gray-700">
-                <div className="flex justify-between items-center text-xs text-gray-500">
-                    <div>
-                        <span className="font-medium text-gray-400">Commands:</span>
-                        <span className="ml-1">run</span>
-                        <span className="ml-1">clear</span>
-                        <span className="ml-1">help</span>
-                        <span className="ml-1">status</span>
+            </div>
+
+            {/* Terminal Footer */}
+            <div className="px-4 py-2 bg-[#0A0A0A] border-t border-[#242424]">
+                <div className="flex justify-between items-center text-sm text-[#FFFFFF]/60">
+                    <div className="flex items-center gap-4">
+                        <span className="font-medium text-[#FFFFFF]/80">Commands:</span>
+                        <span>run</span>
+                        <span>clear</span>
+                        <span>help</span>
+                        <span>status</span>
                     </div>
-                    <div>
-                        <span className="font-medium text-gray-400">↑↓</span>
-                        <span className="ml-1">Ctrl+Enter</span>
+                    <div className="flex items-center gap-2">
+                        <span className="font-medium text-[#FFFFFF]/80">↑↓ History</span>
+                        <span>Ctrl+Enter Run</span>
                     </div>
                 </div>
             </div>
