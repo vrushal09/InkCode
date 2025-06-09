@@ -1,19 +1,15 @@
 import { LANGUAGE_CONFIGS } from '../config/jdoodle.js';
-
-// Backend API configuration
-const BACKEND_API_URL = 'http://localhost:5000/api';
+import API, { apiRequest } from './apiConfig.js';
 
 // Check if backend is available
 const checkBackendHealth = async () => {
     try {
-        const response = await fetch(`${BACKEND_API_URL}/health`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+        const response = await apiRequest(API.endpoints.health, {
+            method: 'GET'
         });
         return response.ok;
     } catch (error) {
+        console.error("Backend health check failed:", error);
         return false;
     }
 };
@@ -31,13 +27,8 @@ const executeWithBackend = async (code, language, input = '') => {
             language: langConfig.jdoodleLanguage,
             versionIndex: langConfig.versionIndex,
             stdin: input || ''
-        };
-
-        const response = await fetch(`${BACKEND_API_URL}/execute`, {
+        };        const response = await apiRequest(API.endpoints.execute, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify(requestBody)
         });
 
