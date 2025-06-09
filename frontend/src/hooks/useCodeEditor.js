@@ -4,13 +4,17 @@ import { ref, onValue, set } from "firebase/database";
 import { toast } from "react-toastify";
 import { codeExecutionService } from "../services/codeExecutionService";
 import { useUserPreferences } from "../contexts/UserPreferencesContext";
+import { analyzeCodeInput } from "../utils/inputDetection";
 
 export const useCodeEditor = (roomId, activeFile, getFileContent, updateFileContent, getFileObject) => {
-    const { preferences } = useUserPreferences();
-    const [code, setCode] = useState("");
+    const { preferences } = useUserPreferences();    const [code, setCode] = useState("");
     const [language, setLanguage] = useState("javascript");
     const [input, setInput] = useState("");
-    const [output, setOutput] = useState("");    const [isExecuting, setIsExecuting] = useState(false);// Load code from active file
+    const [output, setOutput] = useState("");
+    const [isExecuting, setIsExecuting] = useState(false);
+    const [showInputPrompt, setShowInputPrompt] = useState(false);
+    const [inputPromptMessage, setInputPromptMessage] = useState("");
+    const [pendingExecution, setPendingExecution] = useState(false);// Load code from active file
     useEffect(() => {
         if (activeFile && getFileContent && getFileObject) {
             const content = getFileContent(activeFile);
@@ -136,11 +140,30 @@ export const useCodeEditor = (roomId, activeFile, getFileContent, updateFileCont
                 lineBlame: lineBlame // Save line-by-line blame data
             });
         }, { onlyOnce: true });    };
-    
-    // Execute code function
+      // Execute code function with input detection
     const executeCode = async () => {
+        // Analyze code for input requirements
+        const inputAnalysis = analyzeCodeInput(code, language);
+        
+        // If input is detected and no input is provided, prompt the user
+        if (inputAnalysis.hasInput && (!input || input.trim() === "")) {
+            setInputPromptMessage(inputAnalysis.message);
+            setShowInputPrompt(true);
+            setPendingExecution(true);
+            toast.info("Input required - please provide input values before execution");
+            return;
+        }
+        
+        // Proceed with execution
+        await performExecution();
+    };
+    
+    // Perform the actual code execution
+    const performExecution = async () => {
         setIsExecuting(true);
         setOutput("");
+        setShowInputPrompt(false);
+        setPendingExecution(false);
 
         try {
             const result = await codeExecutionService.executeCode(code, language, input);
@@ -155,8 +178,20 @@ export const useCodeEditor = (roomId, activeFile, getFileContent, updateFileCont
             setIsExecuting(false);
         }
     };
-
-    return {
+    
+    // Handle input confirmation (when user provides input after prompt)
+    const confirmInputAndExecute = async () => {
+        if (pendingExecution) {
+            await performExecution();
+        }
+    };
+    
+    // Handle input dismissal
+    const dismissInputPrompt = () => {
+        setShowInputPrompt(false);
+        setPendingExecution(false);
+        setInputPromptMessage("");
+    };    return {
         code,
         setCode,
         language,
@@ -166,7 +201,12 @@ export const useCodeEditor = (roomId, activeFile, getFileContent, updateFileCont
         output,
         setOutput,
         isExecuting,
+        showInputPrompt,
+        inputPromptMessage,
+        pendingExecution,
         handleCodeChange,
-        executeCode
+        executeCode,
+        confirmInputAndExecute,
+        dismissInputPrompt
     };
 };

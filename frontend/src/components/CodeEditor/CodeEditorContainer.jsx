@@ -58,9 +58,7 @@ const CodeEditorContainer = () => {
     } = useFileSystem(roomId, {
         // Prevent auto-switching to first file when opening files
         autoSelectFirstFile: false
-    });
-
-    // Custom hooks for different features
+    });    // Custom hooks for different features
     const {
         code,
         setCode,
@@ -71,8 +69,13 @@ const CodeEditorContainer = () => {
         output,
         setOutput,
         isExecuting,
+        showInputPrompt,
+        inputPromptMessage,
+        pendingExecution,
         handleCodeChange,
-        executeCode
+        executeCode,
+        confirmInputAndExecute,
+        dismissInputPrompt
     } = useCodeEditor(roomId, activeFile, getFileContent, updateFileContent, getFileObject);
 
     const {
@@ -333,8 +336,7 @@ const CodeEditorContainer = () => {
                                 </div>
 
                                 {/* Bottom Row - Terminal and Comments */}
-                                <div className="h-64 flex gap-4">
-                                    {/* Terminal Panel */}
+                                <div className="h-64 flex gap-4">                                    {/* Terminal Panel */}
                                     <div className="flex-1 bg-[#0A0A0A] border border-[#242424] rounded-xl overflow-hidden">
                                         <TerminalPanel
                                             output={output}
@@ -344,6 +346,11 @@ const CodeEditorContainer = () => {
                                             isExecuting={isExecuting}
                                             language={language}
                                             activeFile={activeFile}
+                                            showInputPrompt={showInputPrompt}
+                                            inputPromptMessage={inputPromptMessage}
+                                            pendingExecution={pendingExecution}
+                                            confirmInputAndExecute={confirmInputAndExecute}
+                                            dismissInputPrompt={dismissInputPrompt}
                                         />
                                     </div>
 

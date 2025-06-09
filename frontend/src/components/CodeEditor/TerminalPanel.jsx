@@ -9,7 +9,12 @@ const TerminalPanel = ({
     executeCode, 
     isExecuting, 
     language,
-    activeFile 
+    activeFile,
+    showInputPrompt,
+    inputPromptMessage,
+    pendingExecution,
+    confirmInputAndExecute,
+    dismissInputPrompt
 }) => {
     const { preferences } = useUserPreferences();
     const [terminalHistory, setTerminalHistory] = useState([]);
@@ -219,24 +224,24 @@ To start backend server:
     };    const renderContent = (item) => {
         if (item.type === 'command') {
             return (
-                <div className="flex items-start gap-2 mb-2">
-                    <span className="text-[#FFFFFF] font-mono text-sm">{getPrompt()}</span>
-                    <span className="text-[#FFFFFF] font-mono text-sm">{item.content}</span>
-                    <span className="text-[#FFFFFF]/50 text-sm ml-auto">{item.timestamp}</span>
+                <div className="flex flex-wrap items-start gap-x-2 mb-1.5 pb-1 border-b border-[#242424]/20">
+                    <span className="text-[#FFFFFF] font-mono text-sm whitespace-nowrap">{getPrompt()}</span>
+                    <span className="text-[#FFFFFF] font-mono text-sm flex-1">{item.content}</span>
+                    <span className="text-[#FFFFFF]/40 text-xs">{item.timestamp}</span>
                 </div>
             );
         } else {
             return (
-                <div className="mb-3">
-                    <pre className="text-[#FFFFFF]/90 font-mono text-sm whitespace-pre-wrap break-words">
+                <div className="mb-2 pl-1 border-l-2 border-[#242424]/50">
+                    <pre className="text-[#FFFFFF]/90 font-mono text-sm whitespace-pre-wrap break-words overflow-x-auto max-h-[500px] overflow-y-auto">
                         {item.content}
                     </pre>
-                    <span className="text-[#FFFFFF]/50 text-sm">{item.timestamp}</span>
+                    <span className="text-[#FFFFFF]/40 text-xs block mt-1">{item.timestamp}</span>
                 </div>
             );
         }
     };return (
-        <div className="h-full bg-[#0A0A0A] border border-[#242424] rounded-xl overflow-hidden flex flex-col">
+        <div className="h-full bg-[#0A0A0A] border border-[#242424] rounded-xl overflow-hidden flex flex-col max-h-full">
             {/* Terminal Header */}
             <div className="px-4 py-3 border-b border-[#242424] bg-[#000000]">
                 <div className="flex items-center justify-between">
@@ -291,7 +296,7 @@ To start backend server:
             </div>            {/* Terminal Content */}
             <div 
                 ref={terminalRef}
-                className="flex-1 p-4 bg-[#000000] text-[#FFFFFF] overflow-y-auto font-mono custom-scrollbar"
+                className="flex-1 p-3 bg-[#000000] text-[#FFFFFF] overflow-y-auto font-mono custom-scrollbar"
                 style={{ fontSize: `${preferences.terminalFontSize}px` }}
             >
                 {/* Welcome message */}
@@ -302,16 +307,18 @@ To start backend server:
                     </div>
                 )}
 
-                {/* Terminal history */}
-                {terminalHistory.map((item, index) => (
-                    <div key={index}>
-                        {renderContent(item)}
-                    </div>
-                ))}
+                {/* Terminal history - with better spacing */}
+                <div className="space-y-1">
+                    {terminalHistory.map((item, index) => (
+                        <div key={index}>
+                            {renderContent(item)}
+                        </div>
+                    ))}
+                </div>
 
-                {/* Current input line */}
-                <form onSubmit={handleCommandSubmit} className="flex items-center gap-2 mt-2">
-                    <span className="text-[#FFFFFF] font-mono text-sm">{getPrompt()}</span>
+                {/* Current input line - fixed styling */}
+                <form onSubmit={handleCommandSubmit} className="flex items-center gap-2 mt-3 border-t border-[#242424]/30 pt-2">
+                    <span className="text-[#FFFFFF] font-mono text-sm whitespace-nowrap">{getPrompt()}</span>
                     <input
                         ref={inputRef}
                         type="text"
@@ -323,21 +330,105 @@ To start backend server:
                         autoFocus
                     />
                 </form>
-            </div>
-
-            {/* Terminal Footer */}
-            <div className="px-4 py-2 bg-[#0A0A0A] border-t border-[#242424]">
-                <div className="flex justify-between items-center text-sm text-[#FFFFFF]/60">
-                    <div className="flex items-center gap-4">
-                        <span className="font-medium text-[#FFFFFF]/80">Commands:</span>
-                        <span>run</span>
-                        <span>clear</span>
-                        <span>help</span>
-                        <span>status</span>
+            </div>{/* Input Section */}
+            <div className="bg-[#0A0A0A] border-t border-[#242424] flex-shrink-0">
+                {/* Prompt Message - Only shown when input is required */}
+                {showInputPrompt && inputPromptMessage && (
+                    <div className="px-4 py-2 bg-yellow-900/30 border-b border-[#242424]">
+                        <div className="flex items-center justify-between">
+                            <p className="text-yellow-300 text-sm flex items-center">
+                                <svg className="h-4 w-4 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.314 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                </svg>
+                                <span className="line-clamp-2">{inputPromptMessage}</span>
+                            </p>
+                            <div className="flex space-x-2 ml-2 flex-shrink-0">
+                                <button
+                                    onClick={confirmInputAndExecute}
+                                    disabled={isExecuting || !input.trim()}
+                                    className="px-3 py-1 bg-green-600 hover:bg-green-700 disabled:bg-green-800/50 disabled:cursor-not-allowed text-white text-xs rounded-md transition-colors whitespace-nowrap"
+                                >
+                                    {isExecuting ? 'Executing...' : 'Execute'}
+                                </button>
+                                <button
+                                    onClick={dismissInputPrompt}
+                                    disabled={isExecuting}
+                                    className="px-3 py-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 text-white text-xs rounded-md transition-colors whitespace-nowrap"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <span className="font-medium text-[#FFFFFF]/80">↑↓ History</span>
-                        <span>Ctrl+Enter Run</span>
+                )}
+                
+                {/* Input Textarea Area */}
+                <div className="px-4 py-2">
+                    <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium text-[#FFFFFF]/80 flex items-center">
+                            Input:
+                            {showInputPrompt && (
+                                <span className="ml-2 px-2 py-0.5 bg-yellow-600 text-xs rounded-full animate-pulse">
+                                    Required
+                                </span>
+                            )}
+                        </label>
+                        
+                        {/* Input area controls - could add buttons here for clearing input, etc. */}
+                        <div className="flex items-center">
+                            {input.trim() && (
+                                <button 
+                                    onClick={() => setInput('')}
+                                    className="text-xs text-[#FFFFFF]/60 hover:text-[#FFFFFF]/90 px-2 py-0.5"
+                                    title="Clear input"
+                                >
+                                    Clear
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                    <textarea
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        placeholder={showInputPrompt ? "Please provide input values..." : "Enter input values (if needed)..."}
+                        className={`w-full mt-1 p-2 bg-[#000000] border rounded-lg text-[#FFFFFF] font-mono text-sm resize-none focus:outline-none transition-colors ${
+                            showInputPrompt 
+                                ? 'border-yellow-500 focus:border-yellow-400 ring-1 ring-yellow-500/20' 
+                                : 'border-[#242424] focus:border-[#FFFFFF]/30'
+                        }`}
+                        rows={2}
+                        autoFocus={showInputPrompt}
+                    />
+                    {showInputPrompt && !input.trim() && (
+                        <p className="text-yellow-400 text-xs mt-1">
+                            Input is required to execute this code
+                        </p>
+                    )}
+                </div>
+            </div>            {/* Terminal Footer */}
+            <div className="px-4 py-1.5 bg-[#0A0A0A] border-t border-[#242424] flex-shrink-0">
+                <div className="flex flex-wrap justify-between items-center text-xs text-[#FFFFFF]/60">
+                    <div className="flex items-center flex-wrap gap-2 md:gap-3">
+                        <span className="font-medium text-[#FFFFFF]/80">Commands:</span>
+                        <span className="px-1.5 py-0.5 bg-[#242424]/50 rounded">run</span>
+                        <span className="px-1.5 py-0.5 bg-[#242424]/50 rounded">clear</span>
+                        <span className="px-1.5 py-0.5 bg-[#242424]/50 rounded">help</span>
+                        <span className="px-1.5 py-0.5 bg-[#242424]/50 rounded">status</span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-1 md:mt-0">
+                        <span className="flex items-center gap-1">
+                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
+                            </svg>
+                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
+                            </svg>
+                            <span className="ml-1 text-[#FFFFFF]/70">History</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                            <kbd className="px-1 bg-[#242424] rounded text-xs">Ctrl+Enter</kbd>
+                            <span className="text-[#FFFFFF]/70">Run</span>
+                        </span>
                     </div>
                 </div>
             </div>
