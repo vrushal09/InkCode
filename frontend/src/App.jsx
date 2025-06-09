@@ -5,6 +5,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './config/firebase';
 import { getThemeInfo } from './config/themes';
 import React from "react";
+import { Analytics } from "@vercel/analytics/next"
 
 // Pages
 import Auth from './pages/Auth';
@@ -86,6 +87,7 @@ function AppContent() {
         theme={isLightTheme ? 'light' : 'dark'}
         autoClose={3000}
       />
+      <Analytics/>
     </div>
   );
 }
@@ -99,5 +101,6 @@ function App() {
     </Router>
   );
 }
+
 
 export default App;
