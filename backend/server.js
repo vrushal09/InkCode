@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-    origin: ['http://localhost:3000', 'http://localhost:5173'], // Vite and React dev servers
+    origin: ['http://localhost:3000', 'http://localhost:5173','https://inkcode-ymp9.onrender.com/api/execute','https://inkcode-ymp9.onrender.com'], // Vite and React dev servers
     credentials: true
 }));
 app.use(express.json());
