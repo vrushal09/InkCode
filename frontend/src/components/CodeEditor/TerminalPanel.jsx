@@ -89,8 +89,7 @@ const TerminalPanel = ({
                     timestamp: new Date().toLocaleTimeString(),
                     language: 'text'
                 }
-            ]);        } else if (command.toLowerCase() === 'help') {
-            // Show help
+            ]);        } else if (command.toLowerCase() === 'help') {            // Show help
             const helpText = `Available commands:
 run/execute - Run the current code file
 clear - Clear terminal
@@ -100,7 +99,9 @@ pwd - Show current file
 lang - Show current language
 status - Show execution environment status
 config - Show backend configuration status
-backend - Show backend server info`;
+backend - Show backend server info
+nodejs-tips - Get Node.js input handling tips
+fix-prompt - Generate code to fix prompt() issues in Node.js`;
             setTerminalHistory(prev => [
                 ...prev,
                 {
@@ -164,8 +165,7 @@ ${!isBackendAvailable ? '\nTo start backend:\n1. cd backend\n2. npm install\n3. 
                     timestamp: new Date().toLocaleTimeString(),
                     language: 'text'
                 }
-            ]);
-        } else if (command.toLowerCase() === 'backend') {
+            ]);        } else if (command.toLowerCase() === 'backend') {
             // Show backend info
             const backendText = `Backend Server Information:
 URL: http://localhost:5000
@@ -185,6 +185,153 @@ To start backend server:
                     language: 'text'
                 }
             ]);
+        } else if (command.toLowerCase() === 'nodejs-tips') {
+            // Show Node.js input handling tips
+            const nodejsTipsText = `Node.js Input Handling Tips:
+
+Error: ReferenceError: prompt is not defined
+Solution: The prompt() function only works in browsers, not in Node.js.
+
+To get user input in Node.js, use one of these approaches:
+
+1. Use the input panel below (recommended):
+   - Expand the input panel if collapsed
+   - Enter your input values, separated by new lines
+   - Your code can read this input using:
+   
+   const readline = require('readline');
+   const rl = readline.createInterface({
+     input: process.stdin,
+     output: process.stdout
+   });
+   
+   rl.question('Enter value: ', (answer) => {
+     console.log('You entered:', answer);
+     rl.close();
+   });
+
+2. For multiple inputs, use this pattern:
+   
+   const readline = require('readline');
+   const rl = readline.createInterface({
+     input: process.stdin,
+     output: process.stdout
+   });
+   
+   function askQuestion(query) {
+     return new Promise(resolve => rl.question(query, resolve));
+   }
+   
+   async function main() {
+     const numSubjects = await askQuestion('Enter number of subjects: ');
+     console.log('Processing', numSubjects, 'subjects');
+     rl.close();
+   }
+   
+   main();
+
+3. For pure input (non-interactive):
+   
+   process.stdin.resume();
+   process.stdin.setEncoding('utf8');
+   let inputData = '';
+   
+   process.stdin.on('data', (chunk) => {
+     inputData += chunk;
+   });
+   
+   process.stdin.on('end', () => {
+     // Split by new lines for multiple values
+     const inputs = inputData.trim().split('\\n');
+     console.log('Received inputs:', inputs);
+   });`;
+            
+            setTerminalHistory(prev => [
+                ...prev,
+                {
+                    type: 'output',
+                    content: nodejsTipsText,
+                    timestamp: new Date().toLocaleTimeString(),
+                    language: 'javascript'
+                }
+            ]);
+              // Auto-expand the input panel when showing this tip
+            setIsInputPanelCollapsed(false);
+            
+        } else if (command.toLowerCase() === 'fix-prompt') {
+            // Generate example code to fix the prompt issue
+            const fixPromptText = `// Example code to fix the prompt() issue in Node.js
+// Replace your current code with this template and modify as needed
+
+// For Node.js environment - reads from standard input
+const readline = require('readline');
+
+// Create interface for reading input
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+// Function to get input with a prompt
+function getInput(promptText) {
+  return new Promise(resolve => {
+    rl.question(promptText, answer => {
+      resolve(answer);
+    });
+  });
+}
+
+// Main async function to handle your logic
+async function main() {
+  try {
+    // Get number of subjects
+    const subjectCount = parseInt(await getInput("Enter the number of subjects: "));
+    
+    // Replace with your original code logic
+    let total = 0;
+    for (let i = 0; i < subjectCount; i++) {
+      const score = parseFloat(await getInput(\`Enter score for subject \${i+1}: \`));
+      total += score;
+    }
+    
+    const average = total / subjectCount;
+    console.log(\`Average score: \${average.toFixed(2)}\`);
+    
+  } catch (error) {
+    console.error("An error occurred:", error.message);
+  } finally {
+    // Always close the readline interface when done
+    rl.close();
+  }
+}
+
+// Execute the program
+main();`;
+            
+            setTerminalHistory(prev => [
+                ...prev,
+                {
+                    type: 'output',
+                    content: fixPromptText,
+                    timestamp: new Date().toLocaleTimeString(),
+                    language: 'javascript'
+                }
+            ]);
+            
+            // Show instructions for using the generated code
+            setTerminalHistory(prev => [
+                ...prev,
+                {
+                    type: 'output',
+                    content: `To fix your code:\n1. Copy the example above\n2. Replace the logic in the main() function with your own code\n3. Make sure to use "await getInput()" instead of prompt()\n4. Run your code again with the input panel expanded below`,
+                    timestamp: new Date().toLocaleTimeString(),
+                    language: 'text'
+                }
+            ]);
+            
+            // Auto-expand the input panel
+            setIsInputPanelCollapsed(false);
+            
         } else {
             // Unknown command
             setTerminalHistory(prev => [
