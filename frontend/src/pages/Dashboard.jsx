@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'react-toastify';
 import TeamManager from '../components/TeamManager';
 import Sidebar from '../components/Sidebar';
+import Loader from '../components/Loader';
 
 // Removed language constants as we now auto-detect from file extensions
 
@@ -16,14 +17,15 @@ const Dashboard = () => {
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [newProject, setNewProject] = useState({
     name: ''
   });  const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('recent');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
-
   useEffect(() => {
     const loadProjects = async () => {
+      setIsLoading(true);
       try {
         // Load user's own projects
         const userProjectsRef = ref(database, `users/${auth.currentUser.uid}/projects`);
@@ -45,12 +47,14 @@ const Dashboard = () => {
           );
 
           setProjects(userProjects);
+          setIsLoading(false);
         });
 
         return () => createdProjectsUnsubscribe();
       } catch (error) {
         console.error('Error loading projects:', error);
         toast.error('Failed to load projects');
+        setIsLoading(false);
       }
     };
 
@@ -346,10 +350,20 @@ const Dashboard = () => {
               <span className="text-sm text-[#FFFFFF]/60">
                 {filteredProjects.length} of {projects.length} projects
               </span>
-            </div>
-
-            {/* Projects Content */}
-            {filteredProjects.length === 0 ? (
+            </div>            {/* Projects Content */}
+            {isLoading ? (
+              <div className="text-center py-16">
+                <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <Loader />
+                </div>
+                <h3 className="text-lg font-medium text-[#FFFFFF] mb-2">
+                  Loading projects...
+                </h3>
+                <p className="text-[#FFFFFF]/60 mb-6 text-sm">
+                  Please wait while we fetch your projects
+                </p>
+              </div>
+            ) : filteredProjects.length === 0 ? (
               <div className="text-center py-16">
                 <div className="w-16 h-16 mx-auto mb-4 bg-[#0A0A0A] border border-[#242424] rounded-full flex items-center justify-center">
                   <svg className="h-8 w-8 text-[#FFFFFF]/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
