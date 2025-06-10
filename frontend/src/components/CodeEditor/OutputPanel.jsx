@@ -1,9 +1,9 @@
 const OutputPanel = ({ output }) => {
     // Find backend connectivity error patterns
-    const isBackendError = output && 
-        (output.includes('Backend server not available') || 
-         output.includes('Failed to connect to backend server'));
-    
+    const isBackendError = output &&
+        (output.includes('Backend server not available') ||
+            output.includes('Failed to connect to backend server'));
+
     return (
         <div className="flex-1 bg-[#0A0A0A] border border-[#242424] rounded-xl flex flex-col overflow-hidden">
             <div className="p-6 border-b border-[#242424] flex-shrink-0">
@@ -17,7 +17,7 @@ const OutputPanel = ({ output }) => {
             <div className="flex-1 overflow-hidden">
                 <pre className="custom-scrollbar p-6 text-sm text-white/80 whitespace-pre-wrap h-full overflow-y-auto bg-[#000000] font-mono">
                     {output || "Run your code to see the output here..."}
-                    
+
                     {isBackendError && (
                         <div className="mt-6 p-4 bg-yellow-900/30 border border-yellow-700/50 rounded-lg">
                             <h4 className="text-yellow-400 font-medium mb-2">Backend Connection Troubleshooting:</h4>
