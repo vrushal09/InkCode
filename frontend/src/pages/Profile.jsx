@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../config/firebase';
 import { updateProfile, updateEmail, updatePassword, signOut, deleteUser } from 'firebase/auth';
@@ -23,13 +23,23 @@ const Profile = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
-
+  const [profilePhotoURL, setProfilePhotoURL] = useState(auth.currentUser?.photoURL || '');
+  
+  // Keep profile photo URL in sync with auth user
+  useEffect(() => {
+    if (auth.currentUser?.photoURL) {
+      setProfilePhotoURL(auth.currentUser.photoURL);
+    }
+  }, [auth.currentUser]);
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     try {
-      if (formData.displayName !== auth.currentUser?.displayName) {
+      // Update profile details including display name and photo URL if changed
+      if (formData.displayName !== auth.currentUser?.displayName || 
+          profilePhotoURL !== auth.currentUser?.photoURL) {
         await updateProfile(auth.currentUser, {
-          displayName: formData.displayName
+          displayName: formData.displayName,
+          photoURL: profilePhotoURL
         });
       }
 
@@ -112,7 +122,6 @@ const Profile = () => {
     setShowDeleteConfirmation(false);
     setDeleteConfirmationText('');
   };
-
   const togglePasswordVisibility = (field) => {
     switch (field) {
       case 'current':
@@ -124,7 +133,32 @@ const Profile = () => {
       case 'confirm':
         setShowConfirmPassword(!showConfirmPassword);
         break;
-    }  };  return (
+    }
+  };
+
+  // Handle photo URL input change
+  const handlePhotoURLChange = (e) => {
+    setProfilePhotoURL(e.target.value);
+  };
+
+  // Handle file select for profile photo
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setProfilePhotoURL(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Remove profile photo
+  const removeProfilePhoto = () => {
+    setProfilePhotoURL('');
+  };
+
+  return (
     <div className="min-h-screen bg-[#000000] flex">
       {/* Sidebar */}
       <Sidebar currentPage="profile" /> 
@@ -157,14 +191,30 @@ const Profile = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Profile Overview Card */}
                 <div className="lg:col-span-1">
-                  <div className="bg-[#0A0A0A] border border-[#242424] rounded-xl p-6">
-                  <div className="text-center">
-                    {/* Avatar */}
-                    <div className="w-20 h-20 mx-auto mb-4 bg-[#FFFFFF] rounded-full flex items-center justify-center">
-                      <span className="text-[#000000] font-bold text-2xl">
-                        {auth.currentUser?.displayName?.charAt(0)?.toUpperCase() || 
-                         auth.currentUser?.email?.charAt(0)?.toUpperCase() || 'U'}
-                      </span>
+                  <div className="bg-[#0A0A0A] border border-[#242424] rounded-xl p-6">                  <div className="text-center">                    {/* Avatar - Show profile image or first letter as fallback */}
+                    <div className="w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden">
+                      {auth.currentUser?.photoURL ? (
+                        <img 
+                          src={auth.currentUser.photoURL} 
+                          alt="Profile" 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.style.display = 'none';
+                            const fallbackDiv = e.target.parentNode.querySelector('.fallback-avatar');
+                            if (fallbackDiv) fallbackDiv.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className="fallback-avatar w-full h-full bg-[#FFFFFF] flex items-center justify-center" 
+                        style={{display: auth.currentUser?.photoURL ? 'none' : 'flex'}}
+                      >
+                        <span className="text-[#000000] font-bold text-2xl">
+                          {auth.currentUser?.displayName?.charAt(0)?.toUpperCase() || 
+                          auth.currentUser?.email?.charAt(0)?.toUpperCase() || 'U'}
+                        </span>
+                      </div>
                     </div>
                     
                     <h3 className="text-xl font-semibold text-[#FFFFFF] mb-1">
@@ -203,8 +253,68 @@ const Profile = () => {
                 </svg>
                 Profile Information
               </h2>
-              
-              <form onSubmit={handleUpdateProfile} className="space-y-4">
+                <form onSubmit={handleUpdateProfile} className="space-y-4">
+                {/* Profile Photo Upload */}
+                <div>
+                  <label className="block text-sm font-medium text-[#FFFFFF]/80 mb-2">
+                    Profile Photo
+                  </label>                    <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 rounded-full overflow-hidden bg-[#242424]">
+                      {profilePhotoURL ? (
+                        <img 
+                          src={profilePhotoURL} 
+                          alt="Profile Preview" 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.style.display = 'none';
+                            const fallbackDiv = e.target.parentNode.querySelector('.form-fallback-avatar');
+                            if (fallbackDiv) fallbackDiv.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className="form-fallback-avatar w-full h-full bg-[#FFFFFF] flex items-center justify-center"
+                        style={{display: profilePhotoURL ? 'none' : 'flex'}}
+                      >
+                        <span className="text-[#000000] font-bold text-xl">
+                          {formData.displayName?.charAt(0)?.toUpperCase() || 
+                          formData.email?.charAt(0)?.toUpperCase() || 'U'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex flex-col space-y-2">
+                        <label className="relative cursor-pointer bg-[#242424] py-2 px-4 rounded-md text-center text-sm hover:bg-[#303030] transition-colors">
+                          <span>Upload Image</span>
+                          <input 
+                            type="file" 
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                            accept="image/*"
+                            onChange={handleFileSelect}
+                          />
+                        </label>
+                        <input
+                          type="text"
+                          className="block w-full px-3 py-2 text-sm bg-[#000000] text-[#FFFFFF] placeholder-[#FFFFFF]/40 border border-[#242424] rounded-md focus:outline-none focus:ring-1 focus:ring-[#FFFFFF]/20 focus:border-[#FFFFFF]/30"
+                          placeholder="Or paste image URL"
+                          value={profilePhotoURL}
+                          onChange={handlePhotoURLChange}
+                        />
+                        {profilePhotoURL && (
+                          <button
+                            type="button"
+                            onClick={removeProfilePhoto}
+                            className="text-red-500 text-xs hover:text-red-400"
+                          >
+                            Remove Photo
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-[#FFFFFF]/80 mb-2">
                     Display Name
