@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../config/firebase';
+import logoImage from '../../public/Logo.png';
 
 const Sidebar = ({ currentPage = 'dashboard' }) => {
   const navigate = useNavigate();
@@ -22,9 +23,8 @@ const Sidebar = ({ currentPage = 'dashboard' }) => {
       <div className="p-6 border-b border-[#242424]">
         <div className="flex items-center justify-between">
           {!sidebarCollapsed && (
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-[#FFFFFF] rounded-lg flex items-center justify-center">
-                <span className="text-[#000000] font-bold text-sm">IC</span>
+            <div className="flex items-center space-x-3">              <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
+                <img src={logoImage} alt="InkCode Logo" className="w-full h-full object-contain" />
               </div>
               <div>
                 <h1 className="text-base font-semibold text-[#FFFFFF]">InkCode</h1>
