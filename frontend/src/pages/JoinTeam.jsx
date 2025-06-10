@@ -113,14 +113,12 @@ const JoinTeam = () => {
         } finally {
             setJoining(false);
         }
-    };
-
-    if (loading) {
+    };    if (loading) {
         return (
-            <div className="min-h-screen bg-[#09090f] text-white flex items-center justify-center">
+            <div className="min-h-screen bg-[#000000] text-white flex items-center justify-center">
                 <div className="text-center">
-                    <div className="animate-spin w-8 h-8 border-4 border-violet-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <p className="text-gray-400">Loading invitation...</p>
+                    <div className="animate-spin w-8 h-8 border-4 border-[#FFFFFF] border-t-transparent rounded-full mx-auto mb-4"></div>
+                    <p className="text-[#FFFFFF]/60">Loading invitation...</p>
                 </div>
             </div>
         );
@@ -128,86 +126,83 @@ const JoinTeam = () => {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-[#09090f] text-white flex items-center justify-center">
-                <div className="text-center max-w-md mx-auto p-6">
+            <div className="min-h-screen bg-[#000000] text-white flex items-center justify-center">
+                <div className="text-center max-w-md mx-auto p-6 bg-[#0A0A0A] border border-[#242424] rounded-xl">
                     <div className="w-16 h-16 mx-auto mb-4 text-red-400">
                         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.854-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
                         </svg>
                     </div>
-                    <h1 className="text-2xl font-bold mb-2">Invalid Invitation</h1>
-                    <p className="text-gray-400 mb-6">{error}</p>
+                    <h1 className="text-2xl font-bold mb-2 text-[#FFFFFF]">Invalid Invitation</h1>
+                    <p className="text-[#FFFFFF]/60 mb-6">{error}</p>
                     <button
                         onClick={() => navigate('/dashboard')}
-                        className="px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg hover:from-violet-700 hover:to-purple-700 transition-colors font-medium"
+                        className="px-6 py-3 bg-[#FFFFFF] text-[#000000] rounded-md hover:bg-[#FFFFFF]/90 transition-colors font-medium"
                     >
                         Go to Dashboard
                     </button>
                 </div>
             </div>
         );
-    }
-
-    return (
-        <div className="min-h-screen bg-[#09090f] text-white">
-            <div className="max-w-md mx-auto pt-20 px-6">
-                <div className="bg-[#111119] border border-gray-800 rounded-xl p-8 text-center">
-                    <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-r from-violet-600 to-purple-600 rounded-full flex items-center justify-center">
-                        <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    }    return (
+        <div className="min-h-screen bg-[#000000] text-white flex items-center justify-center p-4">
+            <div className="w-full max-w-md">
+                <div className="bg-[#0A0A0A] border border-[#242424] rounded-xl p-8 text-center">
+                    <div className="w-10 h-10 mx-auto mb-6 bg-[#242424] rounded-lg flex items-center justify-center">
+                        <svg className="h-5 w-5 text-[#FFFFFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
                     </div>
 
-                    <h1 className="text-2xl font-bold mb-2">Join Team</h1>
-                    <p className="text-gray-400 mb-6">
+                    <h1 className="text-lg font-semibold text-[#FFFFFF] mb-2">Join Team</h1>
+                    <p className="text-[#FFFFFF]/60 mb-6">
                         You've been invited to join the team
                     </p>
 
                     {invitation && (
-                        <div className="bg-[#1a1a23] border border-gray-700 rounded-lg p-4 mb-6 text-left">
-                            <h3 className="font-semibold text-lg mb-2">{invitation.projectName}</h3>
-                            <div className="space-y-2 text-sm text-gray-400">
+                        <div className="bg-[#000000] border border-[#242424] rounded-lg p-4 mb-6 text-left hover:border-[#FFFFFF]/20 transition-all duration-200">
+                            <h3 className="font-medium text-[#FFFFFF] text-sm mb-2">{invitation.projectName}</h3>
+                            <div className="space-y-2 text-xs">
                                 <div className="flex items-center gap-2">
-                                    <span>Invited by:</span>
-                                    <span className="text-white">{invitation.invitedBy.name}</span>
+                                    <span className="text-[#FFFFFF]/60">Invited by:</span>
+                                    <span className="text-[#FFFFFF]">{invitation.invitedBy.name}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span>Email:</span>
-                                    <span className="text-white">{invitation.invitedBy.email}</span>
+                                    <span className="text-[#FFFFFF]/60">Email:</span>
+                                    <span className="text-[#FFFFFF]">{invitation.invitedBy.email}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span>Invited on:</span>
-                                    <span className="text-white">{new Date(invitation.createdAt).toLocaleDateString()}</span>
+                                    <span className="text-[#FFFFFF]/60">Invited on:</span>
+                                    <span className="text-[#FFFFFF]">{new Date(invitation.createdAt).toLocaleDateString()}</span>
                                 </div>
                             </div>
                         </div>
-                    )}
-
-                    {!auth.currentUser ? (
+                    )}                    {!auth.currentUser ? (
                         <div className="space-y-4">
-                            <p className="text-gray-400 text-sm">
+                            <p className="text-xs text-[#FFFFFF]/60 text-center">
                                 Please sign in to join this team
-                            </p>                            <button
+                            </p>
+                            <button
                                 onClick={() => {
                                     // Preserve the invitation token when redirecting to auth
                                     const token = searchParams.get('token');
                                     navigate(`/auth?redirect=/join-team&token=${token}`);
                                 }}
-                                className="w-full px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg hover:from-violet-700 hover:to-purple-700 transition-colors font-medium"
+                                className="w-full px-4 py-2.5 bg-[#FFFFFF] text-[#000000] rounded-md hover:bg-[#FFFFFF]/90 transition-colors font-medium text-sm"
                             >
                                 Sign In
                             </button>
                         </div>
                     ) : auth.currentUser.email.toLowerCase() !== invitation?.email ? (
                         <div className="space-y-4">
-                            <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                                <p className="text-yellow-400 text-sm">
+                            <div className="p-3 bg-[#242424]/50 border border-[#FFFFFF]/10 rounded-md">
+                                <p className="text-[#FFFFFF]/80 text-xs">
                                     This invitation was sent to <strong>{invitation?.email}</strong>, but you're signed in as <strong>{auth.currentUser.email}</strong>.
                                 </p>
                             </div>
                             <button
                                 onClick={() => navigate('/auth')}
-                                className="w-full px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+                                className="w-full px-4 py-2.5 bg-[#242424] text-[#FFFFFF] rounded-md hover:bg-[#242424]/80 transition-colors font-medium text-sm"
                             >
                                 Sign in with correct account
                             </button>
@@ -217,11 +212,11 @@ const JoinTeam = () => {
                             <button
                                 onClick={joinTeam}
                                 disabled={joining}
-                                className="w-full px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg hover:from-violet-700 hover:to-purple-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                                className="w-full px-4 py-2.5 bg-[#FFFFFF] text-[#000000] rounded-md hover:bg-[#FFFFFF]/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm"
                             >
                                 {joining ? (
                                     <>
-                                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                         </svg>
@@ -233,10 +228,13 @@ const JoinTeam = () => {
                             </button>
                             <button
                                 onClick={() => navigate('/dashboard')}
-                                className="w-full px-6 py-3 bg-transparent border border-gray-700 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                                className="w-full px-4 py-2.5 bg-transparent border border-[#242424] text-[#FFFFFF]/60 rounded-md hover:bg-[#242424]/50 transition-colors text-sm"
                             >
                                 Cancel
                             </button>
+                            <p className="text-xs text-[#FFFFFF]/50 mt-3 text-center">
+                                You will be added as a team member to this project
+                            </p>
                         </div>
                     )}
                 </div>
