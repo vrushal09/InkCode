@@ -5,6 +5,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './config/firebase';
 import { getThemeInfo } from './config/themes';
 import React from "react";
+import { Analytics } from '@vercel/analytics/react';
 
 
 // Pages
@@ -115,6 +116,7 @@ function App() {
     <Router>
       <UserPreferencesProvider>
         <AppContent />
+        <Analytics debug={import.meta.env.DEV} />
       </UserPreferencesProvider>
     </Router>
   );
