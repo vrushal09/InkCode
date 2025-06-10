@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -26,10 +26,29 @@ function AppContent() {
   const { preferences } = useUserPreferences();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
 
   // Get theme info to determine if it's light or dark
   const themeInfo = getThemeInfo(preferences.theme);
   const isLightTheme = themeInfo.category === 'Light';
+
+  // Update document title based on current path
+  useEffect(() => {
+    const getPageTitle = () => {
+      const path = location.pathname;
+      
+      if (path === "/" || path === "/auth") return "Login | InkCode";
+      if (path === "/dashboard") return "Dashboard | InkCode";
+      if (path.startsWith("/editor")) return "Code Editor | InkCode";
+      if (path === "/profile") return "Profile | InkCode";
+      if (path === "/join-team") return "Join Team | InkCode";
+      if (path === "/instructions") return "Instructions | InkCode";
+      
+      return "InkCode";
+    };
+    
+    document.title = getPageTitle();
+  }, [location]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
