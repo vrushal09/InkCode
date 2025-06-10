@@ -26,6 +26,7 @@ const DEFAULT_PREFERENCES = {
     sidebarCollapsed: false,
     chatNotifications: true,
     autoSave: true,
+    dashboardViewMode: 'grid', // Dashboard view mode preference (grid or list)
     
     // Coding preferences
     autoCompletion: true,

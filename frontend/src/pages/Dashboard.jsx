@@ -4,6 +4,7 @@ import { auth, database } from '../config/firebase';
 import { ref, push, set, onValue, query, orderByChild, limitToLast, get, remove } from 'firebase/database';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'react-toastify';
+import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import TeamManager from '../components/TeamManager';
 import Sidebar from '../components/Sidebar';
 import Loader from '../components/Loader';
@@ -12,6 +13,7 @@ import Loader from '../components/Loader';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { preferences, updatePreference } = useUserPreferences();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
@@ -22,7 +24,14 @@ const Dashboard = () => {
     name: ''
   });  const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('recent');
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState(preferences.dashboardViewMode || 'grid'); // 'grid' or 'list'
+  
+  // Keep viewMode in sync with user preferences
+  useEffect(() => {
+    if (preferences.dashboardViewMode) {
+      setViewMode(preferences.dashboardViewMode);
+    }
+  }, [preferences.dashboardViewMode]);
   useEffect(() => {
     const loadProjects = async () => {
       setIsLoading(true);
@@ -231,11 +240,13 @@ const Dashboard = () => {
             </div>
 
             {/* Right: Actions */}
-            <div className="flex items-center space-x-3 ml-6">
-              {/* View Toggle */}
+            <div className="flex items-center space-x-3 ml-6">              {/* View Toggle */}
               <div className="flex bg-[#0A0A0A] border border-[#242424] rounded-lg p-1">
                 <button
-                  onClick={() => setViewMode('grid')}
+                  onClick={() => {
+                    setViewMode('grid');
+                    updatePreference('dashboardViewMode', 'grid');
+                  }}
                   className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-[#242424] text-[#FFFFFF]' : 'text-[#FFFFFF]/60 hover:text-[#FFFFFF]'}`}
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -243,7 +254,10 @@ const Dashboard = () => {
                   </svg>
                 </button>
                 <button
-                  onClick={() => setViewMode('list')}
+                  onClick={() => {
+                    setViewMode('list');
+                    updatePreference('dashboardViewMode', 'list');
+                  }}
                   className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-[#242424] text-[#FFFFFF]' : 'text-[#FFFFFF]/60 hover:text-[#FFFFFF]'}`}
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
