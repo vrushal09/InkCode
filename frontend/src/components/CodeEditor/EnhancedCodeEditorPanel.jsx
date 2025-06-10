@@ -12,7 +12,7 @@ import {
 import { formatCode } from "../../utils/codeFormatter";
 import { openSearchPanel } from "@codemirror/search";
 import { useUserPreferences } from "../../contexts/UserPreferencesContext";
-import { getThemeById } from '../../config/themes';
+import { getThemeById, getThemesByCategory } from '../../config/themes';
 
 const EnhancedCodeEditorPanel = ({
     code,
@@ -30,10 +30,11 @@ const EnhancedCodeEditorPanel = ({
     togglePreview,
     isPreviewOpen
 }) => {
-    const { preferences } = useUserPreferences();
+    const { preferences, updatePreference } = useUserPreferences();
     const editorContainerRef = useRef(null);
     const editorViewRef = useRef(null);
     const [showMinimap, setShowMinimap] = useState(preferences.minimap);
+    const [showSettings, setShowSettings] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
 
     // Update minimap state when preferences change
@@ -163,9 +164,7 @@ const EnhancedCodeEditorPanel = ({
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                             Format
-                        </button>
-
-                        {/* Minimap Toggle */}
+                        </button>                        {/* Minimap Toggle */}
                         <button
                             onClick={() => setShowMinimap(!showMinimap)}
                             className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg transition-colors ${
@@ -179,6 +178,23 @@ const EnhancedCodeEditorPanel = ({
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
                             </svg>
                             Minimap
+                        </button>
+                        
+                        {/* Settings Button */}
+                        <button
+                            onClick={() => setShowSettings(!showSettings)}
+                            className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                                showSettings 
+                                    ? 'bg-[#FFFFFF] text-[#000000] hover:bg-[#FFFFFF]/90' 
+                                    : 'bg-[#242424] hover:bg-[#242424]/80 text-[#FFFFFF]'
+                            }`}
+                            title="Editor Settings"
+                        >
+                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Settings
                         </button>
                     </div>
                 </div>
@@ -203,7 +219,127 @@ const EnhancedCodeEditorPanel = ({
                     </span>
                 </div>
             </div>
-
+            
+            {/* Settings Panel */}
+            {showSettings && (
+                <div className="px-4 py-4 bg-[#0A0A0A] border-b border-[#242424]">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fadeIn">
+                        {/* Theme Selector */}
+                        <div>
+                            <label className="block text-xs font-medium text-white/80 mb-1.5">
+                                Theme
+                            </label>
+                            <select
+                                value={preferences.theme}
+                                onChange={(e) => updatePreference('theme', e.target.value)}
+                                className="block w-full px-2.5 py-1.5 bg-[#000000] text-white text-xs border border-[#242424] rounded-md focus:outline-none focus:ring-1 focus:ring-white/20"
+                            >
+                                {Object.entries(getThemesByCategory()).map(([category, themes]) => (
+                                    <optgroup key={category} label={category}>
+                                        {themes.map(theme => (
+                                            <option key={theme.id} value={theme.id}>
+                                                {theme.name}
+                                            </option>
+                                        ))}
+                                    </optgroup>
+                                ))}
+                            </select>
+                        </div>
+                        
+                        {/* Font Size */}
+                        <div>
+                            <label className="block text-xs font-medium text-white/80 mb-1.5">
+                                Font Size
+                            </label>
+                            <select
+                                value={preferences.fontSize}
+                                onChange={(e) => updatePreference('fontSize', parseInt(e.target.value))}
+                                className="block w-full px-2.5 py-1.5 bg-[#000000] text-white text-xs border border-[#242424] rounded-md focus:outline-none focus:ring-1 focus:ring-white/20"
+                            >
+                                <option value="10">10px</option>
+                                <option value="12">12px</option>
+                                <option value="14">14px</option>
+                                <option value="16">16px</option>
+                                <option value="18">18px</option>
+                                <option value="20">20px</option>
+                            </select>
+                        </div>
+                        
+                        {/* Quick Toggle Settings */}
+                        <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
+                            <label className="flex items-center space-x-2 text-xs text-white/80 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={preferences.wordWrap}
+                                    onChange={(e) => updatePreference('wordWrap', e.target.checked)}
+                                    className="w-3.5 h-3.5 bg-[#000000] border-[#242424] rounded focus:ring-1 focus:ring-white/20"
+                                />
+                                <span>Word Wrap</span>
+                            </label>
+                            
+                            <label className="flex items-center space-x-2 text-xs text-white/80 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={preferences.lineNumbers}
+                                    onChange={(e) => updatePreference('lineNumbers', e.target.checked)}
+                                    className="w-3.5 h-3.5 bg-[#000000] border-[#242424] rounded focus:ring-1 focus:ring-white/20"
+                                />
+                                <span>Line Numbers</span>
+                            </label>
+                            
+                            <label className="flex items-center space-x-2 text-xs text-white/80 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={preferences.autoCompletion}
+                                    onChange={(e) => updatePreference('autoCompletion', e.target.checked)}
+                                    className="w-3.5 h-3.5 bg-[#000000] border-[#242424] rounded focus:ring-1 focus:ring-white/20"
+                                />
+                                <span>Auto Completion</span>
+                            </label>
+                            
+                            <label className="flex items-center space-x-2 text-xs text-white/80 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={preferences.bracketMatching}
+                                    onChange={(e) => updatePreference('bracketMatching', e.target.checked)}
+                                    className="w-3.5 h-3.5 bg-[#000000] border-[#242424] rounded focus:ring-1 focus:ring-white/20"
+                                />
+                                <span>Bracket Matching</span>
+                            </label>
+                            
+                            <label className="flex items-center space-x-2 text-xs text-white/80 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={preferences.highlightActiveLine}
+                                    onChange={(e) => updatePreference('highlightActiveLine', e.target.checked)}
+                                    className="w-3.5 h-3.5 bg-[#000000] border-[#242424] rounded focus:ring-1 focus:ring-white/20"
+                                />
+                                <span>Highlight Active Line</span>
+                            </label>
+                            
+                            <label className="flex items-center space-x-2 text-xs text-white/80 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={preferences.indentWithTabs}
+                                    onChange={(e) => updatePreference('indentWithTabs', e.target.checked)}
+                                    className="w-3.5 h-3.5 bg-[#000000] border-[#242424] rounded focus:ring-1 focus:ring-white/20"
+                                />
+                                <span>Indent with Tabs</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            )}            {/* Add CSS Animation */}
+            <style jsx="true">{`
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(-5px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .animate-fadeIn {
+                    animation: fadeIn 0.2s ease-out forwards;
+                }
+            `}</style>
+            
             {/* Enhanced Editor - Flexible height */}
             <div className={`${showMinimap ? 'relative' : ''} flex-1 overflow-hidden`} ref={editorContainerRef}>
                 <div className={`${showMinimap ? 'pr-32' : ''} h-full`}>                    <CodeMirror
