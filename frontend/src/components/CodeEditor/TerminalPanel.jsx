@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useUserPreferences } from '../../contexts/UserPreferencesContext';
 import { codeExecutionService } from '../../services/codeExecutionService';
+import ConnectionDebugger from '../ConnectionDebugger';
 
 const TerminalPanel = ({ 
     output, 
@@ -22,6 +23,7 @@ const TerminalPanel = ({
     const [commandHistory, setCommandHistory] = useState([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
     const [isInputPanelCollapsed, setIsInputPanelCollapsed] = useState(!showInputPrompt);
+    const [showConnectionDebugger, setShowConnectionDebugger] = useState(false);
     const terminalRef = useRef(null);
     const inputRef = useRef(null);
 
@@ -100,6 +102,7 @@ lang - Show current language
 status - Show execution environment status
 config - Show backend configuration status
 backend - Show backend server info
+debug - Open the connection debugger
 nodejs-tips - Get Node.js input handling tips
 fix-prompt - Generate code to fix prompt() issues in Node.js`;
             setTerminalHistory(prev => [
@@ -329,8 +332,20 @@ main();`;
                 }
             ]);
             
-            // Auto-expand the input panel
-            setIsInputPanelCollapsed(false);
+            // Auto-expand the input panel            setIsInputPanelCollapsed(false);
+            
+        } else if (command.toLowerCase() === 'debug') {
+            // Open connection debugger
+            setShowConnectionDebugger(true);
+            setTerminalHistory(prev => [
+                ...prev,
+                {
+                    type: 'output',
+                    content: 'Opening connection debugger...',
+                    timestamp: new Date().toLocaleTimeString(),
+                    language: 'text'
+                }
+            ]);
             
         } else {
             // Unknown command
@@ -644,9 +659,16 @@ main();`;
                             <kbd className="px-1 bg-[#242424] rounded text-xs">Ctrl+Enter</kbd>
                             <span className="text-[#FFFFFF]/70">Run</span>
                         </span>
-                    </div>
-                </div>
+                    </div>                </div>
             </div>
+            
+            {/* Connection Debugger */}
+            {showConnectionDebugger && (
+                <ConnectionDebugger 
+                    visible={showConnectionDebugger} 
+                    onClose={() => setShowConnectionDebugger(false)} 
+                />
+            )}
         </div>
     );
 };

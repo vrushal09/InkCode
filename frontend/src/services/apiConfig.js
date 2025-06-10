@@ -42,6 +42,8 @@ const API = {
 const apiRequest = async (endpoint, options = {}) => {
   const url = `${API.baseURL}${endpoint}`;
   
+  console.log(`API Request to: ${url}`);
+  
   const defaultOptions = {
     headers: {
       'Content-Type': 'application/json'
@@ -50,10 +52,30 @@ const apiRequest = async (endpoint, options = {}) => {
   
   const fetchOptions = {
     ...defaultOptions,
-    ...options
+    ...options,
+    // Add credentials mode for proper CORS handling
+    credentials: options.credentials || 'same-origin'
   };
   
-  return fetch(url, fetchOptions);
+  try {
+    const response = await fetch(url, fetchOptions);
+    
+    // Log the response status for debugging
+    console.log(`API Response from ${endpoint}: Status ${response.status}`);
+    
+    // Clone the response for logging purposes while preserving it for the caller
+    if (response.ok && endpoint === API.endpoints.health) {
+      const clonedResponse = response.clone();
+      clonedResponse.json().then(data => {
+        console.log('Backend health data:', data);
+      }).catch(() => {}); // Ignore parsing errors in the debug code
+    }
+    
+    return response;
+  } catch (error) {
+    console.error(`API Request failed for ${endpoint}:`, error);
+    throw error;
+  }
 };
 
 export { apiRequest };

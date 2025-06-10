@@ -4,9 +4,15 @@ import API, { apiRequest } from './apiConfig.js';
 // Check if backend is available
 const checkBackendHealth = async () => {
     try {
+        console.log(`Checking backend health at: ${API.baseURL}${API.endpoints.health}`);
         const response = await apiRequest(API.endpoints.health, {
             method: 'GET'
         });
+        console.log(`Backend health check status: ${response.ok ? 'OK' : 'Failed'} (${response.status})`);
+        if (response.ok) {
+            const data = await response.json().catch(() => ({}));
+            console.log('Backend health data:', data);
+        }
         return response.ok;
     } catch (error) {
         console.error("Backend health check failed:", error);
@@ -101,20 +107,54 @@ export const codeExecutionService = {
         await new Promise(resolve => setTimeout(resolve, 500));
         
         try {
+            console.log(`Executing ${language} code...`);
+
+            if (!code.trim()) {
+                return 'No code to execute';
+            }
+            
             // Check if backend is available
             const isBackendAvailable = await checkBackendHealth();
+            console.log(`Backend available: ${isBackendAvailable ? 'Yes' : 'No'}, Language: ${language}`);
             
             let result = '';
             
             if (isBackendAvailable) {
-                // Use backend proxy for JDoodle API
-                result = await executeWithBackend(code, language, input);
+                try {
+                    // Use backend proxy for JDoodle API
+                    result = await executeWithBackend(code, language, input);
+                } catch (connectionError) {
+                    console.error('Backend execution error:', connectionError);
+                    
+                    // Provide detailed information about the connection issue
+                    if (connectionError.message.includes('Network') || connectionError.message.includes('Failed to fetch')) {
+                        result = `⚠️ Backend server not reachable. Connection failed.\n\n` + 
+                                `Error Details: ${connectionError.message}\n\n` +
+                                `Backend URL: ${API.baseURL}\n\n` + 
+                                `Potential issues:\n` +
+                                `1. Your backend server on Render might be inactive/sleeping\n` +
+                                `2. CORS configuration may not include your Vercel domain: ${window.location.origin}\n` +
+                                `3. Network connectivity issues\n\n` +
+                                `Solutions:\n` +
+                                `- Visit your Render dashboard to check if the service is running\n` +
+                                `- Add "${window.location.origin}" to CORS allowed origins\n` +
+                                `- Type 'debug' in the terminal to open the connection debugger\n\n` +
+                                `For now, only JavaScript can run locally in the browser.`;
+                    } else {
+                        result = `⚠️ Backend execution error: ${connectionError.message}\n\n` +
+                                 `Try running the 'debug' command in terminal for more details.`;
+                    }
+                }
             } else {
                 // Fallback to local execution for JavaScript only
                 if (language === 'javascript' || language === 'typescript') {
                     result = executeJavaScriptLocal(code, input);
                 } else {
-                    result = `⚠️ Backend server not available. Please start the backend server to execute ${language} code.\n\nRun: npm run dev in the backend directory\n\nFor now, only JavaScript can run locally in the browser.`;
+                    result = `⚠️ Backend server not available. Please start the backend server to execute ${language} code.\n\n` +
+                             `Backend URL: ${API.baseURL}\n\n` +
+                             `Run: npm run dev in the backend directory\n\n` +
+                             `For more detailed diagnostics, type 'debug' in the terminal below.\n\n` +
+                             `For now, only JavaScript can run locally in the browser.`;
                 }
             }
             
@@ -126,7 +166,8 @@ export const codeExecutionService = {
             return result;
             
         } catch (error) {
-            return `Execution Error: ${error.message}`;
+            console.error('Code execution wrapper error:', error);
+            return `Execution Error: ${error.message}\n\nTry running the 'debug' command in terminal for more details.`;
         }
     },
 

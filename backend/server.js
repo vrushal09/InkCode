@@ -8,17 +8,13 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-    origin: [
-        'http://localhost:3000',  // React dev server
-        'http://localhost:5173',  // Vite dev server
-        'https://inkcode-ymp9.onrender.com',  // Backend URL
-        'https://inkcode.vercel.app',  // Assuming your Vercel frontend domain
-        'https://inkcode-frontend.vercel.app',  // Another possible Vercel domain
-        // Add any other frontend URLs that might connect to this backend
-    ],
+    // Allow requests from any origin in production for easier debugging
+    // In a real production app, you might want to limit this
+    origin: '*',
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
+    // Note: when using wildcard '*' for origin, credentials must be false
+    credentials: false
 }));
 app.use(express.json());
 

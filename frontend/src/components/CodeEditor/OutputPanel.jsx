@@ -1,4 +1,9 @@
 const OutputPanel = ({ output }) => {
+    // Find backend connectivity error patterns
+    const isBackendError = output && 
+        (output.includes('Backend server not available') || 
+         output.includes('Failed to connect to backend server'));
+    
     return (
         <div className="flex-1 bg-[#0A0A0A] border border-[#242424] rounded-xl flex flex-col overflow-hidden">
             <div className="p-6 border-b border-[#242424] flex-shrink-0">
@@ -12,6 +17,20 @@ const OutputPanel = ({ output }) => {
             <div className="flex-1 overflow-hidden">
                 <pre className="custom-scrollbar p-6 text-sm text-white/80 whitespace-pre-wrap h-full overflow-y-auto bg-[#000000] font-mono">
                     {output || "Run your code to see the output here..."}
+                    
+                    {isBackendError && (
+                        <div className="mt-6 p-4 bg-yellow-900/30 border border-yellow-700/50 rounded-lg">
+                            <h4 className="text-yellow-400 font-medium mb-2">Backend Connection Troubleshooting:</h4>
+                            <ol className="list-decimal pl-5 space-y-2 text-yellow-200">
+                                <li>Check that your backend server is running on Render</li>
+                                <li>Make sure the frontend is configured with the correct backend URL</li>
+                                <li>Your backend URL should be: <code className="px-1 py-0.5 bg-black/30 rounded">https://inkcode-ymp9.onrender.com</code></li>
+                                <li>Check the browser console for specific connection errors</li>
+                                <li>Verify that CORS is properly configured on the backend to allow requests from your Vercel domain</li>
+                                <li>Try running the command <code className="px-1 py-0.5 bg-black/30 rounded">status</code> in the terminal below for more information</li>
+                            </ol>
+                        </div>
+                    )}
                 </pre>
             </div>
         </div>

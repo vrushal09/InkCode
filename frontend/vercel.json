@@ -1,6 +1,14 @@
 {
     "rewrites": [
       { "source": "/(.*)", "destination": "/" }
-    ]
+    ],
+    "env": {
+      "VITE_API_URL": "https://inkcode-ymp9.onrender.com"
+    },
+    "build": {
+      "env": {
+        "VITE_API_URL": "https://inkcode-ymp9.onrender.com"
+      }
+    }
   }
   
