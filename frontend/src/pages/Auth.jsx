@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { auth } from '../config/firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signInAnonymously } from 'firebase/auth';
 import { toast } from 'react-toastify';
 
 const Auth = () => {
@@ -64,6 +64,18 @@ const Auth = () => {
       toast.error(error.message);
     }
   };
+  const handleGuestLogin = async () => {
+    try {
+      await signInAnonymously(auth);
+      toast.success('Successfully logged in as guest!');
+      toast.info('Note: Your projects will be deleted after you logout', {
+        autoClose: 8000, // Show this message a bit longer
+        position: "top-center"
+      });
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -96,8 +108,7 @@ const Auth = () => {
         </div>
       )}
 
-      {/* Form */}
-      <div className="space-y-4">
+      {/* Form */}      <div className="space-y-4">
         {/* Google Sign In */}
         <button
           onClick={handleGoogleLogin}
@@ -110,7 +121,24 @@ const Auth = () => {
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
           </svg>
           Continue with Google
-        </button>
+        </button>        {/* Guest Login */}
+        <div className="space-y-1">
+          <button
+            onClick={handleGuestLogin}
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-[#242424] text-[#FFFFFF] rounded-md text-sm font-medium hover:bg-[#242424]/80 focus:outline-none focus:ring-2 focus:ring-[#FFFFFF]/20 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+            </svg>
+            Continue as Guest
+          </button>
+          <p className="text-xs text-[#FF6B6B]/80 text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3 h-3 inline mr-1">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+            </svg>
+            Your projects will be deleted after logout
+          </p>
+        </div>
 
         {/* Divider */}
         <div className="relative my-6">
@@ -193,8 +221,7 @@ const Auth = () => {
             type="submit"
             className="w-full py-3 px-4 bg-[#FFFFFF] text-[#000000] rounded-md text-sm font-medium hover:bg-[#FFFFFF]/90 focus:outline-none focus:ring-2 focus:ring-[#FFFFFF]/20 transition-colors"
           >
-            {isLogin ? 'Sign In' : 'Create Account'}
-          </button>
+            {isLogin ? 'Sign In' : 'Create Account'}          </button>
         </form>
 
         {/* Toggle Auth Mode */}
