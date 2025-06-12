@@ -74,12 +74,16 @@ function AppContent() {
       : 'bg-primary text-white'
       }`}>      <Routes>
         <Route
+          path="/"
+          element={<Navigate to="/home" />}
+        />
+        <Route
           path="/home"
           element={user ? <Home/> : <Navigate to="/auth" />}
         />
         <Route
           path="/auth"
-          element={user ? <Navigate to="/home" /> : <Auth />}
+          element={user ? <Navigate to="/dashboard" /> : <Auth />}
         />        <Route
           path="/dashboard"
           element={user ? <Dashboard /> : <Navigate to="/auth" />}
