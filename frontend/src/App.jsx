@@ -14,6 +14,7 @@ import CodeEditor from './pages/CodeEditor';
 import Profile from './pages/Profile';
 import JoinTeam from './pages/JoinTeam';
 import Instructions from './pages/Instructions';
+import Home from './pages/Home';
 
 // Contexts
 import { UserPreferencesProvider, useUserPreferences } from './contexts/UserPreferencesContext';
@@ -31,13 +32,13 @@ function AppContent() {
   // Get theme info to determine if it's light or dark
   const themeInfo = getThemeInfo(preferences.theme);
   const isLightTheme = themeInfo.category === 'Light';
-
   // Update document title based on current path
   useEffect(() => {
     const getPageTitle = () => {
       const path = location.pathname;
       
-      if (path === "/" || path === "/auth") return "Login | InkCode";
+      if (path === "/home") return "Home | InkCode";
+      if (path === "/auth") return "Login | InkCode";
       if (path === "/dashboard") return "Dashboard | InkCode";
       if (path.startsWith("/editor")) return "Code Editor | InkCode";
       if (path === "/profile") return "Profile | InkCode";
@@ -71,34 +72,31 @@ function AppContent() {
     <div className={`min-h-screen ${isLightTheme
       ? 'bg-gray-100 text-gray-900'
       : 'bg-primary text-white'
-      }`}>
-      <Routes>
+      }`}>      <Routes>
         <Route
-          path="/"
-          element={user ? <Navigate to="/dashboard" /> : <Auth />}
+          path="/home"
+          element={user ? <Home/> : <Navigate to="/auth" />}
         />
         <Route
           path="/auth"
-          element={<Auth />}
-        />
-        <Route
+          element={user ? <Navigate to="/home" /> : <Auth />}
+        />        <Route
           path="/dashboard"
-          element={user ? <Dashboard /> : <Navigate to="/" />}
+          element={user ? <Dashboard /> : <Navigate to="/auth" />}
         />
         <Route
           path="/editor/:roomId"
-          element={user ? <CodeEditor /> : <Navigate to="/" />}
+          element={user ? <CodeEditor /> : <Navigate to="/auth" />}
         />
         <Route
           path="/profile"
-          element={user ? <Profile /> : <Navigate to="/" />}
+          element={user ? <Profile /> : <Navigate to="/auth" />}
         />        <Route
           path="/join-team"
           element={<JoinTeam />}
-        />
-        <Route
+        />        <Route
           path="/instructions"
-          element={user ? <Instructions /> : <Navigate to="/" />}
+          element={user ? <Instructions /> : <Navigate to="/auth" />}
         />
       </Routes>
       <ToastContainer
