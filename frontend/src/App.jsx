@@ -79,7 +79,7 @@ function AppContent() {
         />
         <Route
           path="/home"
-          element={user ? <Home/> : <Navigate to="/auth" />}
+          element={ <Home/>}
         />
         <Route
           path="/auth"
@@ -100,7 +100,7 @@ function AppContent() {
           element={<JoinTeam />}
         />        <Route
           path="/instructions"
-          element={user ? <Instructions /> : <Navigate to="/auth" />}
+          element={<Instructions />}
         />
       </Routes>
       <ToastContainer

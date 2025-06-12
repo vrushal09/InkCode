@@ -1,11 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../config/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import Sidebar from '../components/Sidebar';
 
 const Instructions = () => {
     const navigate = useNavigate();
     const [activeSection, setActiveSection] = useState('getting-started');
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setUser(user);
+        });
+        return () => unsubscribe();
+    }, []);
 
     const sections = [
         { id: 'getting-started', title: 'Getting Started', icon: '🚀' },
@@ -21,55 +30,56 @@ const Instructions = () => {
     const renderContent = () => {
         switch (activeSection) {
             case 'getting-started':
-                return (<div className="space-y-6">
-                    <div>
-                        <h2 className="text-2xl font-bold text-[#FFFFFF] mb-4">🚀 Getting Started with InkCode</h2>
-                        <p className="text-[#FFFFFF]/60 mb-6">
-                            Welcome to InkCode! This comprehensive guide will help you master all features of our collaborative code editor.
-                        </p>
-                    </div>
+                return (
+                    <div className="space-y-6">
+                        <div>
+                            <h2 className="text-2xl font-bold text-[#FFFFFF] mb-4">🚀 Getting Started with InkCode</h2>
+                            <p className="text-[#FFFFFF]/60 mb-6">
+                                Welcome to InkCode! This comprehensive guide will help you master all features of our collaborative code editor.
+                            </p>
+                        </div>
 
-                    <div className="bg-[#0A0A0A] border border-[#242424] rounded-xl p-6">
-                        <h3 className="text-lg font-semibold text-[#FFFFFF] mb-3">Step 1: Create Your First Project</h3>
-                        <ul className="space-y-2 text-[#FFFFFF]/70">
-                            <li>• Click the <span className="text-[#FFFFFF] font-medium">"New Project"</span> button on your dashboard</li>
-                            <li>• Enter a descriptive project name</li>
-                            <li>• Click <span className="text-[#FFFFFF] font-medium">"Create Project"</span> to initialize your workspace</li>
-                        </ul>
-                    </div>
+                        <div className="bg-[#0A0A0A] border border-[#242424] rounded-xl p-6">
+                            <h3 className="text-lg font-semibold text-[#FFFFFF] mb-3">Step 1: Create Your First Project</h3>
+                            <ul className="space-y-2 text-[#FFFFFF]/70">
+                                <li>• Click the <span className="text-[#FFFFFF] font-medium">"New Project"</span> button on your dashboard</li>
+                                <li>• Enter a descriptive project name</li>
+                                <li>• Click <span className="text-[#FFFFFF] font-medium">"Create Project"</span> to initialize your workspace</li>
+                            </ul>
+                        </div>
 
-                    <div className="bg-[#0A0A0A] border border-[#242424] rounded-xl p-6">
-                        <h3 className="text-lg font-semibold text-[#FFFFFF] mb-3">Step 2: Understanding the Interface</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <h4 className="font-medium text-[#FFFFFF] mb-2">Left Panel</h4>
-                                <ul className="text-sm text-[#FFFFFF]/70 space-y-1">
-                                    <li>• File Explorer - Navigate your project files</li>
-                                    <li>• Team Panel - Manage collaborators</li>
-                                    <li>• Chat - Communicate with team members</li>
-                                </ul>
-                            </div>
-                            <div>
-                                <h4 className="font-medium text-[#FFFFFF] mb-2">Main Editor</h4>
-                                <ul className="text-sm text-[#FFFFFF]/70 space-y-1">
-                                    <li>• Code Editor - Write and edit your code</li>
-                                    <li>• File Tabs - Switch between open files</li>
-                                    <li>• Toolbar - Access editor features</li>
-                                </ul>
+                        <div className="bg-[#0A0A0A] border border-[#242424] rounded-xl p-6">
+                            <h3 className="text-lg font-semibold text-[#FFFFFF] mb-3">Step 2: Understanding the Interface</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <h4 className="font-medium text-[#FFFFFF] mb-2">Left Panel</h4>
+                                    <ul className="text-sm text-[#FFFFFF]/70 space-y-1">
+                                        <li>• File Explorer - Navigate your project files</li>
+                                        <li>• Team Panel - Manage collaborators</li>
+                                        <li>• Chat - Communicate with team members</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 className="font-medium text-[#FFFFFF] mb-2">Main Editor</h4>
+                                    <ul className="text-sm text-[#FFFFFF]/70 space-y-1">
+                                        <li>• Code Editor - Write and edit your code</li>
+                                        <li>• File Tabs - Switch between open files</li>
+                                        <li>• Toolbar - Access editor features</li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="bg-[#0A0A0A] border border-[#242424] rounded-xl p-6">
-                        <h3 className="text-lg font-semibold text-[#FFFFFF] mb-3">Step 3: Create Your First File</h3>
-                        <ul className="space-y-2 text-[#FFFFFF]/70">
-                            <li>• Right-click in the File Explorer</li>
-                            <li>• Select <span className="text-[#FFFFFF] font-medium">"New File"</span></li>
-                            <li>• Enter filename with extension (e.g., <code className="bg-[#242424] px-2 py-1 rounded">index.js</code>)</li>
-                            <li>• Start coding with full syntax highlighting and autocomplete!</li>
-                        </ul>
+                        <div className="bg-[#0A0A0A] border border-[#242424] rounded-xl p-6">
+                            <h3 className="text-lg font-semibold text-[#FFFFFF] mb-3">Step 3: Create Your First File</h3>
+                            <ul className="space-y-2 text-[#FFFFFF]/70">
+                                <li>• Right-click in the File Explorer</li>
+                                <li>• Select <span className="text-[#FFFFFF] font-medium">"New File"</span></li>
+                                <li>• Enter filename with extension (e.g., <code className="bg-[#242424] px-2 py-1 rounded">index.js</code>)</li>
+                                <li>• Start coding with full syntax highlighting and autocomplete!</li>
+                            </ul>
+                        </div>
                     </div>
-                </div>
                 );
 
             case 'editor-features':
@@ -678,8 +688,8 @@ const Instructions = () => {
         }
     }; return (
         <div className="min-h-screen bg-[#000000] flex">
-            {/* Sidebar */}
-            <Sidebar currentPage="help" />
+            {/* Conditional Sidebar - only show if user is logged in */}
+            {user && <Sidebar currentPage="help" />}
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col overflow-hidden">
@@ -694,13 +704,13 @@ const Instructions = () => {
                         {/* Header Actions */}
                         <div className="flex items-center space-x-3">
                             <button
-                                onClick={() => navigate('/dashboard')}
+                                onClick={() => navigate(user ? '/dashboard' : '/home')}
                                 className="flex items-center space-x-2 px-4 py-2 bg-[#FFFFFF] text-[#000000] rounded-lg hover:bg-[#FFFFFF]/90 transition-colors text-sm font-medium"
                             >
                                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                                 </svg>
-                                <span>Back to Dashboard</span>
+                                <span>{user ? 'Back to Dashboard' : 'Back to Home'}</span>
                             </button>
                         </div>
                     </div>
@@ -721,8 +731,8 @@ const Instructions = () => {
                                                     key={section.id}
                                                     onClick={() => setActiveSection(section.id)}
                                                     className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center space-x-3 ${activeSection === section.id
-                                                            ? 'bg-[#FFFFFF]/10 text-[#FFFFFF] border border-[#FFFFFF]/20'
-                                                            : 'text-[#FFFFFF]/70 hover:text-[#FFFFFF] hover:bg-[#FFFFFF]/5'
+                                                        ? 'bg-[#FFFFFF]/10 text-[#FFFFFF] border border-[#FFFFFF]/20'
+                                                        : 'text-[#FFFFFF]/70 hover:text-[#FFFFFF] hover:bg-[#FFFFFF]/5'
                                                         }`}
                                                 >
                                                     <span className="text-lg">{section.icon}</span>
