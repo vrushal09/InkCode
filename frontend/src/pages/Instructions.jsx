@@ -689,7 +689,7 @@ const Instructions = () => {
     }; return (
         <div className="min-h-screen bg-[#000000] flex">
             {/* Conditional Sidebar - only show if user is logged in */}
-            {user && <Sidebar currentPage="help" />}
+            {user && <Sidebar currentPage="instructions" />}
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col overflow-hidden">

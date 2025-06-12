@@ -6,11 +6,12 @@ import logoImage from '../../public/Logo.png';
 const Sidebar = ({ currentPage = 'dashboard' }) => {
   const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
   const getPageTitle = () => {
     switch (currentPage) {
       case 'profile':
         return 'Profile';
+      case 'instructions':
+        return 'Help';
       case 'dashboard':
       default:
         return 'Dashboard';
@@ -84,18 +85,25 @@ const Sidebar = ({ currentPage = 'dashboard' }) => {
               </svg>
               {!sidebarCollapsed && <span className="text-sm">Profile</span>}
             </button>
+          )}          {/* Help Navigation */}
+          {currentPage === 'instructions' ? (
+            <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'space-x-3'} px-3 py-2 text-[#FFFFFF] bg-[#242424] rounded-lg`}>
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {!sidebarCollapsed && <span className="text-sm font-medium">Help</span>}
+            </div>
+          ) : (
+            <button
+              onClick={() => navigate('/instructions')}
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'space-x-3'} px-3 py-2 text-[#FFFFFF]/70 hover:text-[#FFFFFF] hover:bg-[#242424] rounded-lg transition-colors`}
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {!sidebarCollapsed && <span className="text-sm">Help</span>}
+            </button>
           )}
-
-          {/* Help Navigation */}
-          <button
-            onClick={() => navigate('/instructions')}
-            className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'space-x-3'} px-3 py-2 text-[#FFFFFF]/70 hover:text-[#FFFFFF] hover:bg-[#242424] rounded-lg transition-colors`}
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {!sidebarCollapsed && <span className="text-sm">Help</span>}
-          </button>
         </nav>
       </div>
 
