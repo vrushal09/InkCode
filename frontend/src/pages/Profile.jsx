@@ -20,8 +20,8 @@ const Profile = () => {
   });
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
   const [profilePhotoURL, setProfilePhotoURL] = useState(auth.currentUser?.photoURL || '');
 
@@ -66,17 +66,24 @@ const Profile = () => {
       toast.error(error.message);
     }
   };
-
   const handleLogout = async () => {
-    if (window.confirm('Are you sure you want to logout?')) {
-      try {
-        await signOut(auth);
-        navigate('/');
-        toast.success('Logged out successfully!');
-      } catch (error) {
-        toast.error('Failed to logout');
-      }
+    setShowLogoutConfirmation(true);
+  };
+
+  const confirmLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/');
+      toast.success('Logged out successfully!');
+    } catch (error) {
+      toast.error('Failed to logout');
+    } finally {
+      setShowLogoutConfirmation(false);
     }
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutConfirmation(false);
   };
 
   const handleDeleteAccount = async () => {
@@ -484,7 +491,43 @@ const Profile = () => {
               </div>
             </div>        </div>
         </div>
-      </div>
+      </div>      {/* Logout Confirmation Modal */}
+      {showLogoutConfirmation && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50">
+          <div className="bg-[#0A0A0A] border border-red-600/30 rounded-xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <svg className="h-8 w-8 text-red-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <h3 className="text-xl font-bold text-red-400">Confirm Logout</h3>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-[#FFFFFF]/80 mb-2">
+                Are you sure you want to logout?
+              </p>
+              <p className="text-[#FFFFFF]/60 text-sm">
+                You'll need to sign in again to access your account.
+              </p>
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={cancelLogout}
+                className="flex-1 px-4 py-2.5 bg-[#242424] text-[#FFFFFF] rounded-md hover:bg-[#303030] transition-colors font-medium border border-[#242424]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-[#FFFFFF] rounded-md hover:bg-red-700 transition-colors font-medium border border-red-500"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Account Confirmation Modal */}
       {showDeleteConfirmation && (

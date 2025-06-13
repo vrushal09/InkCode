@@ -12,12 +12,11 @@ const EditorHeader = ({
     const { preferences } = useUserPreferences();
     return (        <div className="bg-[#0A0A0A] border-b border-[#242424] sticky top-0 z-40">
             <div className="max-w-7xl mx-auto px-6 py-4">
-                <div className="flex items-center justify-between">
-                    {/* Logo and Project Info */}
+                <div className="flex items-center justify-between">                    {/* Logo and Project Info */}
                     <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center">
-                                <span className="text-black font-bold text-sm">IC</span>
+                            <div className="w-8 h-8 rounded-xl flex items-center justify-center overflow-hidden">
+                                <img src="/Logo-2.png" alt="InkCode Logo" className="w-full h-full object-contain" />
                             </div>
                             <div>
                                 <h1 className="text-xl font-bold text-white">Code Editor</h1>

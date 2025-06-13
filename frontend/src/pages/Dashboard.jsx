@@ -13,10 +13,11 @@ import Loader from '../components/Loader';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { preferences, updatePreference } = useUserPreferences();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { preferences, updatePreference } = useUserPreferences();  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [projectToDelete, setProjectToDelete] = useState(null);
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -154,18 +155,21 @@ const Dashboard = () => {
     setSelectedProjectId(projectId);
     setIsTeamModalOpen(true);
   };
-
   const handleDeleteProject = async (e, projectId, roomId) => {
     e.stopPropagation();
+    
+    // Find the project to store for the modal
+    const project = projects.find(p => p.id === projectId);
+    setProjectToDelete({ projectId, roomId, project });
+    setIsDeleteModalOpen(true);
+  };
 
-    if (!window.confirm('Are you sure you want to delete this project? This will remove it for all team members.')) {
-      return;
-    }
+  const confirmDeleteProject = async () => {
+    if (!projectToDelete) return;
+
+    const { projectId, roomId, project } = projectToDelete;
 
     try {
-      // Get project data before deletion to access invitations
-      const project = projects.find(p => p.id === projectId);
-
       // Remove project from projects collection (this also removes project invitations)
       const projectRef = ref(database, `projects/${projectId}`);
       await remove(projectRef);
@@ -201,7 +205,15 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error deleting project:', error);
       toast.error('Failed to delete project');
+    } finally {
+      setIsDeleteModalOpen(false);
+      setProjectToDelete(null);
     }
+  };
+
+  const cancelDeleteProject = () => {
+    setIsDeleteModalOpen(false);
+    setProjectToDelete(null);
   };
 
   const formatDate = (timestamp) => {
@@ -598,6 +610,44 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Project Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50">
+          <div className="bg-[#0A0A0A] border border-red-600/30 rounded-xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <svg className="h-8 w-8 text-red-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L5.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <h3 className="text-xl font-bold text-red-400">Delete Project</h3>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-[#FFFFFF]/80 mb-2">
+                Are you sure you want to delete "{projectToDelete?.project?.name}"?
+              </p>
+              <p className="text-[#FFFFFF]/60 text-sm">
+                <strong className="text-red-400">This action cannot be undone.</strong> This will permanently remove the project for all team members.
+              </p>
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={cancelDeleteProject}
+                className="flex-1 px-4 py-2.5 bg-[#242424] text-[#FFFFFF] rounded-md hover:bg-[#303030] transition-colors font-medium border border-[#242424]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteProject}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-[#FFFFFF] rounded-md hover:bg-red-700 transition-colors font-medium border border-red-500"
+              >
+                Delete Project
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* New Project Modal */}
       {isModalOpen && (
